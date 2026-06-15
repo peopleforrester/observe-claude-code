@@ -1,0 +1,24 @@
+# Secrets — never commit. The real env file lives in ~/secrets and is symlinked in.
+.env
+*.env.local
+env/*.local
+
+# Docker Compose runtime volumes / data
+compose/volumes/
+**/data/
+prometheus/data/
+loki/data/
+
+# Captured telemetry for offline replay can be large; keep curated samples only,
+# ignore raw bulk captures.
+demo/replay/raw/
+*.otlp.raw
+
+# Weaver live-check output reports
+weaver/**/live_check.json
+weaver/**/*.report.json
+
+# OS / editor noise
+.DS_Store
+*.swp
+*~

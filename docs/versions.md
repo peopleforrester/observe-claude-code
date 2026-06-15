@@ -18,6 +18,11 @@ both moving; **re-verify the week of Oct 22, 2026** before the recording goes fi
 | Jaeger (v2) | `v2.19.0` | 2026-06-03 | github.com/jaegertracing/jaeger/releases |
 | Grafana | `12.4.x` (chosen) / `13.0.2` latest | 13.0.2 = 2026-06-09 | github.com/grafana/grafana/releases |
 | OTel semconv | `v1.42.0` | 2026-06-12 | github.com/open-telemetry/semantic-conventions/releases |
+| OTel Weaver | `v0.23.0` (pre-1.0) | 2026-04-22 | github.com/open-telemetry/weaver/releases |
+
+Grafana is the one intentional non-latest pin: `12.4.x` instead of latest `13.0.2`, to avoid the
+v13 v2-schema provisioning trap (see correction #3). Everything else is latest GA. Weaver is the
+only pre-1.0 component — pin the exact version and rehearse against it (see gotchas-weaver.md).
 
 Use the Contrib collector image (`otel/opentelemetry-collector-contrib:0.154.0`) — the
 Datadog exporter and the otlphttp/Loki path both live there.
