@@ -162,3 +162,33 @@ Build order gates on the done-criteria in spec §3. Each phase ends green before
 - **Datadog turning into a product tour**: keep the vendor pane to the same three views, no more.
 - **Loki schema/startup**: the tsdb+v13 requirement is a hard startup gate — get Phase 1 green
   before anything else.
+
+## 7. Forward-looking close and the sequel project
+
+The talk closes by pointing past observation to enforcement. The security pane already shows
+the agent's risky actions — the denied `tool_decision`, the MCP boundary in the trace waterfall.
+The natural next question, and the close: *we can **see** the denied tool decision — could an LLM
+author the deterministic Falco/Kyverno rule that **enforces** it? That's a whole other talk.*
+
+That other talk is a **separate, adjacent project** (`idea-dynamic-software-blocker`): LLM-authored,
+human-gated, deterministic detection rules sourced from agent/GenAI telemetry. Keep it separate —
+this is the observe half; that is the enforce half. Cross-linked here only so the close lands and
+the two CFPs reference each other.
+
+Two notes carried over from that project's research, reconciled against our own verification:
+
+- **Conformance nuance (already covered).** Claude Code's spans are GenAI-*flavored*, not fully
+  semconv-conformant: first-party span names (`claude_code.*`), `gen_ai.system` not yet
+  `gen_ai.provider.name`, a partial `gen_ai.*` subset. We already own this — versions.md records
+  the rename in flight, and the **Weaver live-check beat is exactly the "validate against the
+  evolving standard, watch the advisories" moment.** No extra build needed.
+- **Correction to that project's doc.** It claims "no distinct execute-tool/MCP span." Our
+  verification (against the live monitoring-usage doc) shows otherwise: there **is** a
+  `claude_code.tool.execution` span, the tool span carries `gen_ai.tool.call.id`, and
+  `mcp_server_name`/`mcp_tool_name` are present — so **the MCP boundary is visible in the trace**,
+  which is the spine of our security pane. Our data is the more precise source; don't let the
+  sibling doc's framing weaken the trace story.
+
+We deliberately do NOT pull in that project's OTTL span-normalization layer (Weaver covers the
+standard-conformance beat for a 25-min slot) or its adversarial/poisoning research (too deep here;
+it belongs to the sequel).

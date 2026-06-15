@@ -31,6 +31,10 @@ Nothing has been run or stood up yet — no container has been launched.
 - Demo MCP = custom "prod API" server with one denied write tool.
 - Grafana pinned 12.4.x (NOT latest 13.0.2) to avoid v13 provisioning trap — **pending Michael's
   final sign-off**; he was asked to veto if he wants latest.
+- Substrate confirmed: **Docker Compose, single-host** on the VPS for the AGNTCon 25-min slot
+  (Helm/k8s reserved for the KubeCon 35-min version). Substrate is plumbing, not content.
+- Talk close confirmed: **forward-looking close + cross-link** to the sibling enforcement project
+  `idea-dynamic-software-blocker` (observe → enforce). Not merged; see design.md §7.
 
 ## Pinned versions (verified 2026-06-15, re-verify week of Oct 2026)
 
