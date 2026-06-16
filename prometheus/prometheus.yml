@@ -1,0 +1,27 @@
+# ABOUTME: Prometheus config for the demo — native OTLP ingestion with resource-attribute promotion.
+# ABOUTME: The --web.enable-otlp-receiver flag is set in compose; this file tunes how OTLP lands.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Native OTLP metric ingestion. Claude Code exports cumulative temporality (set in the
+# env file), so no delta-to-cumulative conversion is needed here.
+otlp:
+  # dots -> underscores, unit/_total suffixes (the Prometheus default).
+  translation_strategy: UnderscoreEscapingWithSuffixes
+  # Promote the demo's role framing onto every series as labels (team.id -> team_id).
+  promote_resource_attributes:
+    - role
+    - team.id
+    - cost_center
+  keep_identifying_resource_attributes: true
+
+storage:
+  tsdb:
+    # Tolerate late OTLP samples on the push path.
+    out_of_order_time_window: 30m
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

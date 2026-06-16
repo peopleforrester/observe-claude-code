@@ -1,0 +1,75 @@
+# ABOUTME: Open CNCF observability stack for the observe-claude-code demo (Prometheus/Loki/Jaeger/Grafana).
+# ABOUTME: Run from the repo root with `--project-directory .`; the Collector is added in Phase 2.
+name: observe-claude-code
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.12.0
+    container_name: occ-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-otlp-receiver
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - observe
+
+  loki:
+    image: grafana/loki:3.7.2
+    container_name: occ-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - observe
+
+  jaeger:
+    image: jaegertracing/jaeger:2.19.0
+    container_name: occ-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"   # UI / query
+      - "4317:4317"     # OTLP gRPC (moves behind the Collector in Phase 2)
+      - "4318:4318"     # OTLP HTTP
+    networks:
+      - observe
+
+  grafana:
+    image: grafana/grafana:12.4.4
+    container_name: occ-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
+    networks:
+      - observe
+
+networks:
+  observe:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  loki-data:
+  grafana-data:

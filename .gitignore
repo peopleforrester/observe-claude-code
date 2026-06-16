@@ -18,6 +18,13 @@ demo/replay/raw/
 weaver/**/live_check.json
 weaver/**/*.report.json
 
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+*.egg-info/
+
 # OS / editor noise
 .DS_Store
 *.swp
