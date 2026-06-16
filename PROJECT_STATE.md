@@ -45,26 +45,37 @@ Grafana 12.4.x (latest is 13.0.2) · OTel semconv v1.42.0 · OTel Weaver v0.23.0
 
 - [x] Repo init + GitHub remote + staging branch
 - [x] Docs: spec, abstract, versions, design, gotchas-weaver, gotchas-otlp-integration
-- [x] Phase 0 — Scaffold (dir tree, README, .gitignore, PROJECT_STATE) ← just completed
+- [x] Phase 0 — Scaffold (dir tree, README, .gitignore, PROJECT_STATE)
 - [x] Phase 0.5 — Weaver research spike (→ docs/gotchas-weaver.md; verdict: live step feasible, LOW cost)
-- [ ] Phase 1 — Compose stack stands up (5 services, pinned). Watch: Loki tsdb+v13 startup gate,
-      Prometheus `--web.enable-otlp-receiver`, Jaeger `0.0.0.0` bind.
-- [ ] Phase 2 — Collector config (all-OTLP exporters)
+- [x] Phase 1 — Compose stack stands up (4 backends, pinned) ← just completed. Built TDD on the
+      VPS; 14 integration tests green; all containers healthy; Grafana shows 3 connected datasources.
+      Jaeger `0.0.0.0` bind trap did NOT occur on v2.19 (doc corrected). Collector moved to Phase 2.
+- [ ] Phase 2 — Collector config (all-OTLP exporters); adds the 5th service. Note: Jaeger currently
+      publishes host 4317/4318 — move those behind the Collector (internal network) to avoid a clash.
 - [ ] Phase 3 — Claude Code env file (env/claude-code.env from spec §5)
 - [ ] Phase 4 — Single Grafana dashboard, 3 panes (v1 schema only)
 - [ ] Phase 5 — Scripted session + custom prod-API MCP
 - [ ] Phase 6 — Capture + re-emit offline replay (highest risk)
 - [ ] Phase 7 — Vendor backend + rehearsal + screen-capture floor
 
+## Build host + dev loop
+
+Build host is the **netcup VPS** (Docker 29.5.3 + Compose v5.1.4 installed via
+`scripts/bootstrap-docker.sh`; uv installed user-space). Local→VPS loop is the `Makefile`:
+`make sync` rsyncs the tree to `netcup:~/observe-claude-code`, `make up/down/test` drive Compose
+and pytest over SSH. Tests run on the VPS against the live stack on localhost.
+
 ## Last completed step
 
-Phase 0 + 0.5 done. Research is complete across all components; gotchas captured in two docs.
+Phase 1 done on branch `feature/phase-1-compose-stack` (5 TDD batches, each red→green→commit).
+14 integration tests pass against the live stack. Next: merge the feature branch into staging.
 
 ## Next step
 
-Phase 1: author `compose/docker-compose.yml` + `prometheus/prometheus.yml` + `loki/loki-config.yaml`
-+ Grafana provisioning, bring the five containers up healthy, confirm three connected datasources
-in Grafana. Build config from `docs/gotchas-otlp-integration.md` (it has copy-pasteable snippets).
+Phase 2: author `collector/config.yaml` (otlp receiver 4317/4318, batch processor, three
+all-OTLP pipelines → Prometheus `/api/v1/otlp`, Loki `/otlp`, Jaeger `:4317`), add the collector
+service to compose, and move Jaeger's host-published 4317/4318 behind the collector. TDD: a probe
+that pushes OTLP to the collector and reads it back from all three backends.
 
 ## Open items needing Michael
 
