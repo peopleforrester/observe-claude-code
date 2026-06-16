@@ -1,5 +1,6 @@
 # ABOUTME: Shared pytest fixtures and a polling helper for the live-stack integration tests.
 # ABOUTME: Tests run on the VPS and probe each service on localhost.
+import os
 import time
 from pathlib import Path
 
@@ -8,6 +9,10 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
+# Default poll timeout for readiness checks; lower it (e.g. OCC_WAIT_TIMEOUT=6) to
+# confirm a red test quickly before the service is up.
+DEFAULT_WAIT_TIMEOUT = float(os.environ.get("OCC_WAIT_TIMEOUT", "90"))
+
 # Service endpoints as exposed on the VPS host (published compose ports).
 PROMETHEUS_URL = "http://localhost:9090"
 LOKI_URL = "http://localhost:3100"
@@ -15,7 +20,7 @@ JAEGER_UI_URL = "http://localhost:16686"
 GRAFANA_URL = "http://localhost:3000"
 
 
-def wait_until(predicate, *, timeout=90.0, interval=2.0, what="condition"):
+def wait_until(predicate, *, timeout=DEFAULT_WAIT_TIMEOUT, interval=2.0, what="condition"):
     """Poll `predicate` until it returns a truthy value or the timeout elapses.
 
     Args:
