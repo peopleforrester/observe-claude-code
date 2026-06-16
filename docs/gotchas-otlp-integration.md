@@ -104,8 +104,10 @@ exporters:
       insecure: true        # demo only; gRPC otlp exporter wants TLS by default
 ```
 - OTLP on by default: gRPC 4317, HTTP 4318; UI/query 16686.
-- **Bind-host trap**: Jaeger's default receiver endpoint is `localhost:4317`, unreachable from
-  another container. Override to `0.0.0.0`
+- **Bind-host trap — NOT observed on v2.19 (verified 2026-06-16).** The default
+  `jaegertracing/jaeger:2.19.0` image binds its OTLP receivers so published ports work from the
+  host and the compose network with no override. Phase 1 tests confirm UI + OTLP gRPC/HTTP reachable
+  out of the box. If a future version regresses, override to `0.0.0.0`
   (`--set=receivers.otlp.protocols.grpc.endpoint=0.0.0.0:4317` or `JAEGER_LISTEN_HOST=0.0.0.0`).
 - **Service name** comes from the **resource** `service.name`. If only a span attribute, the UI
   shows `OTLPResourceNoServiceName`.
