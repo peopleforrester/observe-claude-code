@@ -1,0 +1,18 @@
+# ABOUTME: Project metadata and test dependencies for the observe-claude-code demo.
+# ABOUTME: Tests are integration smoke checks run on the VPS against the live stack.
+[project]
+name = "observe-claude-code"
+version = "0.1.0"
+description = "Observing Claude Code in production with OpenTelemetry — AGNTCon NA 2026 demo"
+requires-python = ">=3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8.2",
+    "httpx>=0.27",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
