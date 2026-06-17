@@ -50,8 +50,13 @@ Grafana 12.4.x (latest is 13.0.2) · OTel semconv v1.42.0 · OTel Weaver v0.23.0
 - [x] Phase 1 — Compose stack stands up (4 backends, pinned) ← just completed. Built TDD on the
       VPS; 14 integration tests green; all containers healthy; Grafana shows 3 connected datasources.
       Jaeger `0.0.0.0` bind trap did NOT occur on v2.19 (doc corrected). Collector moved to Phase 2.
-- [ ] Phase 2 — Collector config (all-OTLP exporters); adds the 5th service. Note: Jaeger currently
-      publishes host 4317/4318 — move those behind the Collector (internal network) to avoid a clash.
+- [x] Phase 1.1 — Hardening: healthchecks (Prometheus/Jaeger/Grafana via wget; Loki is distroless,
+      no probe), mem_limit/cpus on all four, Grafana depends_on health-gated. 18 tests green.
+- [ ] Phase 2 — Collector config (all-OTLP exporters); adds the 5th service. Notes:
+      (a) Jaeger currently publishes host 4317/4318 — move those behind the Collector (internal
+      network) to avoid a clash. (b) Gate the Collector's depends_on as service_healthy for
+      prometheus/jaeger and service_started for loki (distroless, no healthcheck) + rely on the
+      otlphttp exporter's retry for Loki readiness.
 - [ ] Phase 3 — Claude Code env file (env/claude-code.env from spec §5)
 - [ ] Phase 4 — Single Grafana dashboard, 3 panes (v1 schema only)
 - [ ] Phase 5 — Scripted session + custom prod-API MCP
@@ -67,15 +72,16 @@ and pytest over SSH. Tests run on the VPS against the live stack on localhost.
 
 ## Last completed step
 
-Phase 1 done on branch `feature/phase-1-compose-stack` (5 TDD batches, each red→green→commit).
-14 integration tests pass against the live stack. Next: merge the feature branch into staging.
+Phase 1.1 done on branch `feature/phase-1.1-healthchecks` (TDD: healthchecks + limits +
+health-gated ordering). 18 integration tests pass against the live stack. Next: merge to staging.
 
 ## Next step
 
 Phase 2: author `collector/config.yaml` (otlp receiver 4317/4318, batch processor, three
 all-OTLP pipelines → Prometheus `/api/v1/otlp`, Loki `/otlp`, Jaeger `:4317`), add the collector
-service to compose, and move Jaeger's host-published 4317/4318 behind the collector. TDD: a probe
-that pushes OTLP to the collector and reads it back from all three backends.
+service to compose (depends_on per the gating note above), and move Jaeger's host-published
+4317/4318 behind the collector. TDD: a probe that pushes OTLP to the collector and reads it back
+from all three backends.
 
 ## Open items needing Michael
 
