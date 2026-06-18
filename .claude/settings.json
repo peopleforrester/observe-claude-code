@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__prod-api__get_status",
+      "Read",
+      "Edit",
+      "Write",
+      "Bash"
+    ],
+    "deny": [
+      "mcp__prod-api__deploy"
+    ]
+  }
+}
