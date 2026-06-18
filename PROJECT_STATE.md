@@ -55,20 +55,29 @@ Grafana 12.4.x (latest is 13.0.2) · OTel semconv v1.42.0 · OTel Weaver v0.23.0
 - [x] Phase 2 — Collector with all-OTLP fan-out. One OTLP receiver → 3 pipelines → Prometheus
       /api/v1/otlp, Loki /otlp, Jaeger OTLP. Collector owns host 4317/4318/13133; Jaeger moved
       internal. Round-trip proven (metric→Prom, log→Loki, trace→Jaeger). 22 tests green.
-- [ ] Phase 3 — Claude Code env file (env/claude-code.env from spec §5). Open question: does the
-      "run a real claude session" validation happen on the VPS (needs claude installed + authed
-      there) or locally pointed at the VPS collector? Decide before building the Phase 3 test.
-- [ ] Phase 4 — Single Grafana dashboard, 3 panes (v1 schema only)
+- [x] Phase 3 — Agent telemetry env file (env/claude-code.env). Static validation (3 tests) +
+      a live smoke: one headless `claude -p` with the env sourced emitted real telemetry into
+      Prometheus (session.count, cost.usage_USD, token.usage x4, active_time) labelled
+      cost_center=agntcon/role=backend. 25 tests green. Live emit kept as manual validation, not
+      a claude-spawning test (suite stays fast/deterministic; we run on this box, ~63 claude procs).
+- [ ] Phase 4 — Single Grafana dashboard, 3 panes (v1 schema only). The live smoke already
+      populated real claude_code_* series, so dashboards can be built against real data.
 - [ ] Phase 5 — Scripted session + custom prod-API MCP
 - [ ] Phase 6 — Capture + re-emit offline replay (highest risk)
 - [ ] Phase 7 — Vendor backend + rehearsal + screen-capture floor
 
 ## Build host + dev loop
 
-Build host is the **netcup VPS** (Docker 29.5.3 + Compose v5.1.4 installed via
-`scripts/bootstrap-docker.sh`; uv installed user-space). Local→VPS loop is the `Makefile`:
-`make sync` rsyncs the tree to `netcup:~/observe-claude-code`, `make up/down/test` drive Compose
-and pytest over SSH. Tests run on the VPS against the live stack on localhost.
+**We run ON the netcup box itself** (hostname `v2202603344103445992`) — this Claude session and
+the build are on the VPS, not a separate laptop. The `netcup` ssh alias loops back to localhost;
+that loopback session is what carries the `docker` group, so docker/uv commands go through
+`ssh netcup '...'` (the direct shell lacks the docker group). Docker 29.5.3 + Compose v5.1.4
+(installed via `scripts/bootstrap-docker.sh`); uv user-space. `Makefile`: `make sync` rsyncs the
+tree to `~/observe-claude-code`, `make up/down/test` drive Compose and pytest. Tests hit the live
+stack on localhost.
+
+**~63 `claude` processes run on this box.** Never kill/signal/interfere with them — no pkill,
+killall, or broad signals. All work stays scoped to `occ-*` containers and `~/observe-claude-code`.
 
 ## Last completed step
 
