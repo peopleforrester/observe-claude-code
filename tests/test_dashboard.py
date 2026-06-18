@@ -40,6 +40,21 @@ def test_dashboard_panels_reference_known_datasources():
             assert tds.get("uid") in VALID_DS_UIDS, f"target in {p.get('title')!r} bad datasource"
 
 
+def test_loki_panels_use_real_event_name_values():
+    # The real Loki event_name values have no "claude_code." prefix (verified against live data).
+    exprs = [
+        t.get("expr", "")
+        for p in _dashboard()["panels"]
+        for t in p.get("targets", [])
+    ]
+    loki_exprs = [e for e in exprs if "event_name" in e]
+    assert loki_exprs, "no Loki event_name panels found"
+    for expr in loki_exprs:
+        assert "claude_code." not in expr, f"stale prefixed event_name in: {expr}"
+    joined = " ".join(loki_exprs)
+    assert "tool_decision" in joined and "mcp_server_connection" in joined
+
+
 def test_dashboard_is_provisioned_in_grafana(http):
     def loaded():
         r = http.get(f"{GRAFANA_URL}/api/dashboards/uid/{UID}", auth=AUTH)

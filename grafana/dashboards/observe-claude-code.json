@@ -143,7 +143,7 @@
         {
           "refId": "A",
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "{service_name=~\".+\"} | event_name=`claude_code.tool_decision`",
+          "expr": "{service_name=\"claude-code\"} | event_name=`tool_decision`",
           "queryType": "range"
         }
       ]
@@ -159,7 +159,7 @@
         {
           "refId": "A",
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "{service_name=~\".+\"} | event_name=`claude_code.mcp_server_connection`",
+          "expr": "{service_name=\"claude-code\"} | event_name=`mcp_server_connection`",
           "queryType": "range"
         }
       ]
