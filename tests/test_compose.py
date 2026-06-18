@@ -32,6 +32,6 @@ def test_compose_defines_expected_backend_services():
     )
     assert result.returncode == 0, result.stderr
     services = set(result.stdout.split())
-    expected = {"prometheus", "loki", "jaeger", "grafana"}
+    expected = {"prometheus", "loki", "jaeger", "grafana", "collector"}
     missing = expected - services
-    assert not missing, f"compose is missing backend services: {sorted(missing)}"
+    assert not missing, f"compose is missing services: {sorted(missing)}"

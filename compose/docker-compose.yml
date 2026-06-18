@@ -50,8 +50,8 @@ services:
     restart: unless-stopped
     ports:
       - "16686:16686"   # UI / query
-      - "4317:4317"     # OTLP gRPC (moves behind the Collector in Phase 2)
-      - "4318:4318"     # OTLP HTTP
+    # OTLP ingress (4317/4318) is owned by the Collector now; Jaeger still listens on
+    # 4317 inside the network and receives traces from the Collector at jaeger:4317.
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:16686/"]
       interval: 10s
@@ -93,6 +93,29 @@ services:
         condition: service_healthy
       loki:
         condition: service_started
+    networks:
+      - observe
+
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.154.0
+    container_name: occ-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./collector/config.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4317:4317"     # OTLP gRPC — the entry point Claude Code exports to
+      - "4318:4318"     # OTLP HTTP
+      - "13133:13133"   # health_check extension
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      jaeger:
+        condition: service_healthy
+      loki:
+        condition: service_started
+    mem_limit: 512m
+    cpus: 1.0
     networks:
       - observe
 

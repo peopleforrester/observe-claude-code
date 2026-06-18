@@ -18,6 +18,9 @@ PROMETHEUS_URL = "http://localhost:9090"
 LOKI_URL = "http://localhost:3100"
 JAEGER_UI_URL = "http://localhost:16686"
 GRAFANA_URL = "http://localhost:3000"
+# The Collector owns the OTLP ingress ports and exposes a health_check extension.
+COLLECTOR_OTLP_HTTP = "http://localhost:4318"
+COLLECTOR_HEALTH_URL = "http://localhost:13133"
 
 
 def wait_until(predicate, *, timeout=DEFAULT_WAIT_TIMEOUT, interval=2.0, what="condition"):

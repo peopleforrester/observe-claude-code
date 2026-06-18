@@ -52,12 +52,12 @@ Grafana 12.4.x (latest is 13.0.2) · OTel semconv v1.42.0 · OTel Weaver v0.23.0
       Jaeger `0.0.0.0` bind trap did NOT occur on v2.19 (doc corrected). Collector moved to Phase 2.
 - [x] Phase 1.1 — Hardening: healthchecks (Prometheus/Jaeger/Grafana via wget; Loki is distroless,
       no probe), mem_limit/cpus on all four, Grafana depends_on health-gated. 18 tests green.
-- [ ] Phase 2 — Collector config (all-OTLP exporters); adds the 5th service. Notes:
-      (a) Jaeger currently publishes host 4317/4318 — move those behind the Collector (internal
-      network) to avoid a clash. (b) Gate the Collector's depends_on as service_healthy for
-      prometheus/jaeger and service_started for loki (distroless, no healthcheck) + rely on the
-      otlphttp exporter's retry for Loki readiness.
-- [ ] Phase 3 — Claude Code env file (env/claude-code.env from spec §5)
+- [x] Phase 2 — Collector with all-OTLP fan-out. One OTLP receiver → 3 pipelines → Prometheus
+      /api/v1/otlp, Loki /otlp, Jaeger OTLP. Collector owns host 4317/4318/13133; Jaeger moved
+      internal. Round-trip proven (metric→Prom, log→Loki, trace→Jaeger). 22 tests green.
+- [ ] Phase 3 — Claude Code env file (env/claude-code.env from spec §5). Open question: does the
+      "run a real claude session" validation happen on the VPS (needs claude installed + authed
+      there) or locally pointed at the VPS collector? Decide before building the Phase 3 test.
 - [ ] Phase 4 — Single Grafana dashboard, 3 panes (v1 schema only)
 - [ ] Phase 5 — Scripted session + custom prod-API MCP
 - [ ] Phase 6 — Capture + re-emit offline replay (highest risk)
@@ -72,16 +72,14 @@ and pytest over SSH. Tests run on the VPS against the live stack on localhost.
 
 ## Last completed step
 
-Phase 1.1 done on branch `feature/phase-1.1-healthchecks` (TDD: healthchecks + limits +
-health-gated ordering). 18 integration tests pass against the live stack. Next: merge to staging.
+Phase 2 done on branch `feature/phase-2-collector` (2 TDD batches: collector up/healthy, then the
+OTLP round-trip). 22 integration tests pass against the live stack. Next: merge to staging.
 
 ## Next step
 
-Phase 2: author `collector/config.yaml` (otlp receiver 4317/4318, batch processor, three
-all-OTLP pipelines → Prometheus `/api/v1/otlp`, Loki `/otlp`, Jaeger `:4317`), add the collector
-service to compose (depends_on per the gating note above), and move Jaeger's host-published
-4317/4318 behind the collector. TDD: a probe that pushes OTLP to the collector and reads it back
-from all three backends.
+Phase 3: author `env/claude-code.env` from spec §5 (verified schema). Decide the validation
+approach first (see Phase 3 note above) — whether a real `claude` session runs on the VPS or
+locally against the VPS collector. Build the Phase 3 test around that decision.
 
 ## Open items needing Michael
 
