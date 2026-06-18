@@ -1,0 +1,15 @@
+# ABOUTME: Grafana dashboard provider — loads JSON dashboards from the mounted dashboards directory.
+# ABOUTME: The file provider polls for changes; the provider itself is read at Grafana startup.
+apiVersion: 1
+
+providers:
+  - name: observe-claude-code
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

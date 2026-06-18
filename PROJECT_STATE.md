@@ -60,9 +60,11 @@ Grafana 12.4.x (latest is 13.0.2) · OTel semconv v1.42.0 · OTel Weaver v0.23.0
       Prometheus (session.count, cost.usage_USD, token.usage x4, active_time) labelled
       cost_center=agntcon/role=backend. 25 tests green. Live emit kept as manual validation, not
       a claude-spawning test (suite stays fast/deterministic; we run on this box, ~63 claude procs).
-- [ ] Phase 4 — Single Grafana dashboard, 3 panes (v1 schema only). The live smoke already
-      populated real claude_code_* series, so dashboards can be built against real data.
-- [ ] Phase 5 — Scripted session + custom prod-API MCP
+- [x] Phase 4 — Grafana dashboard, 3 panes (v1 schema). Productivity/Cost/Security rows wired to
+      claude_code_* metrics + Loki events; provisioned and verified. 29 tests green. (Smoke data
+      from Phase 3 is ~18h old now and aged out of the default window — irrelevant for live/replay.)
+- [ ] Phase 5 — Scripted session + custom prod-API MCP. This is what finally fills the Security
+      pane (tool_decision reject + mcp_server_connection) with real data on stage.
 - [ ] Phase 6 — Capture + re-emit offline replay (highest risk)
 - [ ] Phase 7 — Vendor backend + rehearsal + screen-capture floor
 
@@ -81,14 +83,16 @@ killall, or broad signals. All work stays scoped to `occ-*` containers and `~/ob
 
 ## Last completed step
 
-Phase 2 done on branch `feature/phase-2-collector` (2 TDD batches: collector up/healthy, then the
-OTLP round-trip). 22 integration tests pass against the live stack. Next: merge to staging.
+Phase 4 done on branch `feature/phase-4-dashboard` (dashboard provider + v1-schema dashboard,
+TDD). 29 integration tests pass against the live stack. Next: merge to staging.
 
 ## Next step
 
-Phase 3: author `env/claude-code.env` from spec §5 (verified schema). Decide the validation
-approach first (see Phase 3 note above) — whether a real `claude` session runs on the VPS or
-locally against the VPS collector. Build the Phase 3 test around that decision.
+Phase 5: build the custom "prod-API" MCP server (one benign read tool + one sensitive write/deploy
+tool denied by config), wire it into a scripted session (`demo/session.md`) that edits files in
+`demo/target/`, runs Bash, calls the read tool, then trips the denied write — producing the
+tool_decision reject + mcp_server_connection events the Security pane needs. See
+frameworks/fastmcp.md for the MCP server conventions.
 
 ## Open items needing Michael
 
