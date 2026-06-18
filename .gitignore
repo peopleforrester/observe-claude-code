@@ -29,3 +29,6 @@ __pycache__/
 .DS_Store
 *.swp
 *~
+
+# Imported context archive from claude.ai migration — local Claude Code context only, never publish (public repo).
+claude-ai-context/
