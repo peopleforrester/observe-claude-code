@@ -5,7 +5,9 @@ name = "observe-claude-code"
 version = "0.1.0"
 description = "Observing Claude Code in production with OpenTelemetry — AGNTCon NA 2026 demo"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "fastmcp>=3.4",
+]
 
 [dependency-groups]
 dev = [
