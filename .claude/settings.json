@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__prod-api__get_status",
+      "mcp__prod-api__deploy",
+      "Read",
+      "Edit",
+      "Write",
+      "Bash"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__prod-api__deploy",
+        "hooks": [
+          { "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/deny-prod-deploy.sh" }
+        ]
+      }
+    ]
+  }
+}

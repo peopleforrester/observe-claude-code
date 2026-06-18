@@ -63,8 +63,14 @@ Grafana 12.4.x (latest is 13.0.2) · OTel semconv v1.42.0 · OTel Weaver v0.23.0
 - [x] Phase 4 — Grafana dashboard, 3 panes (v1 schema). Productivity/Cost/Security rows wired to
       claude_code_* metrics + Loki events; provisioned and verified. 29 tests green. (Smoke data
       from Phase 3 is ~18h old now and aged out of the default window — irrelevant for live/replay.)
-- [ ] Phase 5 — Scripted session + custom prod-API MCP. This is what finally fills the Security
-      pane (tool_decision reject + mcp_server_connection) with real data on stage.
+- [x] Phase 5 — Custom prod-api FastMCP server + scripted session + deny hook. Security pane now
+      fills with real data: mcp_server_connection, tool_decision accept (get_status) + reject
+      (deploy). KEY FINDING: a permission `deny` rule WITHHOLDS an MCP tool (never advertised,
+      never called, no event — invisible); to get a visible tool_decision=reject you must ALLOW
+      the tool (so it's advertised/called) and deny it via a PreToolUse hook (source=hook). Also
+      fixed a Phase 4 dashboard bug: Loki event_name has NO `claude_code.` prefix (it's
+      `tool_decision`, `mcp_server_connection`). 36 tests green. Live session runs via
+      demo/run-session.sh (kept as a documented smoke, not an automated claude-spawning test).
 - [ ] Phase 6 — Capture + re-emit offline replay (highest risk)
 - [ ] Phase 7 — Vendor backend + rehearsal + screen-capture floor
 
@@ -83,16 +89,17 @@ killall, or broad signals. All work stays scoped to `occ-*` containers and `~/ob
 
 ## Last completed step
 
-Phase 4 done on branch `feature/phase-4-dashboard` (dashboard provider + v1-schema dashboard,
-TDD). 29 integration tests pass against the live stack. Next: merge to staging.
+Phase 5 done on branch `feature/phase-5-mcp` (3 TDD batches: MCP server, registration+hook,
+scripted session). 36 integration tests pass; the live session emits the full security story.
+Next: merge to staging.
 
 ## Next step
 
-Phase 5: build the custom "prod-API" MCP server (one benign read tool + one sensitive write/deploy
-tool denied by config), wire it into a scripted session (`demo/session.md`) that edits files in
-`demo/target/`, runs Bash, calls the read tool, then trips the denied write — producing the
-tool_decision reject + mcp_server_connection events the Security pane needs. See
-frameworks/fastmcp.md for the MCP server conventions.
+Phase 6: offline replay (highest risk). Capture one real run's OTLP (a `file`/`debug` exporter on
+the Collector, or a parallel capture) into `demo/replay/`, then a script that re-emits it over OTLP
+to the Collector with freshened timestamps so the dashboards move with the box offline. Decide the
+capture mechanism first; keep a screen recording as the floor. The Phase 3 + Phase 5 live runs are
+good source material to capture.
 
 ## Open items needing Michael
 
