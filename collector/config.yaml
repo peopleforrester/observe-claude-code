@@ -1,0 +1,46 @@
+# ABOUTME: OTel Collector config — one OTLP receiver fanning to Prometheus, Loki, and Jaeger.
+# ABOUTME: All-OTLP exporters; the commercial backend is added as a second exporter per pipeline later.
+extensions:
+  # Liveness endpoint probed by the test suite (the image is distroless, no in-container probe).
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+exporters:
+  # Metrics -> Prometheus native OTLP receiver (otlphttp appends /v1/metrics).
+  otlphttp/prometheus:
+    endpoint: http://prometheus:9090/api/v1/otlp
+  # Logs/events -> Loki native OTLP endpoint (otlphttp appends /v1/logs).
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+  # Traces -> Jaeger OTLP gRPC.
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+service:
+  extensions: [health_check]
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/loki]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/jaeger]
