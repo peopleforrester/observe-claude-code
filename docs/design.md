@@ -55,8 +55,13 @@ OTel Collector Contrib v0.154.0  (one config, 3 pipelines, all-OTLP exporters)
 - **Offline replay = capture + re-emit OTLP** (Phase 6). The collector captures one real
   session as OTLP JSON; a script re-emits it with fresh timestamps so the panes move live from
   canned data. Keep a screen recording as the floor/fallback (Phase 7).
-- **Commercial backend deferred.** Build the open CNCF stack first; add a second OTLP exporter
-  per pipeline for Datadog later, once a key is available. Early phases stay unblocked.
+- **Commercial backend = Datadog, primary on stage, owned by Nick, parked until ~July 2026.**
+  The emphasis shifted: Datadog is the primary on-stage surface and the open CNCF stack is the
+  **fallback** (always present, carries the demo if the vendor path isn't ready). Datadog is the
+  **only co-presenter scope** — Nick adds a second OTLP exporter per pipeline at the marked point
+  in `collector/config.yaml`, supplies the key via `~/secrets`, and builds the Datadog views (kept
+  generic in slides). Build and harden the CNCF stack first; the Datadog phase is self-contained and
+  non-blocking. See `docs/ownership.md` and `docs/run-of-show.md`.
 - **Demo MCP = custom "prod API" server.** A small MCP that simulates a sensitive prod-like
   API; the denied call is the "don't touch prod" boundary that makes the security pane land.
 
@@ -146,12 +151,16 @@ Build order gates on the done-criteria in spec §3. Each phase ends green before
   with freshened timestamps, so dashboards move without network or a live agent.
 - **Done when** the whole side-by-side reproduces from the canned data with the VPS offline.
 
-### Phase 7 — Vendor backend + rehearsal
-- Add a second OTLP exporter per pipeline for the commercial backend (Datadog), gated on a key
-  landing in `~/secrets`. Confirm it shows the same productivity/cost/security views.
-- Full dry run on the VPS via tmux, split screen; record the screen-capture fallback (the floor
-  if anything network-dependent fails on stage).
-- **Done when** spec §3 criteria 1–5 all pass and a narrated screen capture exists as backup.
+### Phase 7 (FINAL) — Datadog backend + rehearsal — OWNER: Nick, parked until ~July 2026
+- Nick adds the Datadog OTLP exporter as a second exporter on each pipeline at the marked point in
+  `collector/config.yaml`, supplies the key via `~/secrets`, and builds the Datadog views (primary
+  on-stage surface, generic in slides). Confirms parity: the same productivity/cost/security views
+  from the identical OTLP stream the CNCF stack receives.
+- Joint: full dry run via tmux, split screen; record the screen-capture fallback (the floor if
+  anything network-dependent fails on stage).
+- **Done when** Datadog shows the three views from the same stream, the run of show is rehearsed,
+  and a narrated screen capture exists as backup. Non-blocking: if not ready by the event, the CNCF
+  fallback carries the demo. See `docs/ownership.md`.
 
 ## 6. Risk register (build-facing)
 

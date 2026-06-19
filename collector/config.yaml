@@ -29,9 +29,19 @@ exporters:
     tls:
       insecure: true
 
+  # --- Datadog (Nick) — final phase, parked until approval (see docs/ownership.md) ---
+  # Define the Datadog exporter here, then add it as a SECOND exporter on each pipeline below
+  # so the identical OTLP stream fans to Datadog alongside the CNCF stack. Key via ~/secrets,
+  # never committed. Uncomment and configure when the Datadog work is approved:
+  # datadog:
+  #   api:
+  #     site: ${env:DD_SITE}
+  #     key: ${env:DD_API_KEY}
+
 service:
   extensions: [health_check]
   pipelines:
+    # Nick adds `datadog` as a second exporter in each list below (e.g. [otlphttp/prometheus, datadog]).
     metrics:
       receivers: [otlp]
       processors: [batch]

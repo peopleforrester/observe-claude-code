@@ -27,7 +27,10 @@ Nothing has been run or stood up yet — no container has been launched.
 - OTLP-native everywhere: Prometheus native OTLP receiver (not remote write), Loki `/otlp`, Jaeger OTLP.
 - OTel Weaver `registry live-check` as a live "validate against an open standard" beat.
 - Offline replay = capture + re-emit OTLP; screen recording as the floor.
-- Commercial backend (Datadog) deferred until a key is available.
+- Commercial backend = **Datadog: primary on stage, owned by Nick, parked until ~July 2026**. CNCF
+  stack is the **fallback** (built first, carries the demo if Datadog isn't ready). Datadog is the
+  only co-presenter scope; integration point marked in collector/config.yaml. See docs/ownership.md
+  and docs/run-of-show.md.
 - Demo MCP = custom "prod API" server with one denied write tool.
 - Grafana pinned 12.4.x (NOT latest 13.0.2) to avoid v13 provisioning trap — **pending Michael's
   final sign-off**; he was asked to veto if he wants latest.
@@ -71,8 +74,8 @@ Grafana 12.4.x (latest is 13.0.2) · OTel semconv v1.42.0 · OTel Weaver v0.23.0
       fixed a Phase 4 dashboard bug: Loki event_name has NO `claude_code.` prefix (it's
       `tool_decision`, `mcp_server_connection`). 36 tests green. Live session runs via
       demo/run-session.sh (kept as a documented smoke, not an automated claude-spawning test).
-- [ ] Phase 6 — Capture + re-emit offline replay (highest risk)
-- [ ] Phase 7 — Vendor backend + rehearsal + screen-capture floor
+- [ ] Phase 6 — Capture + re-emit offline replay (highest risk) — OWNER: Michael, next
+- [ ] Phase 7 (FINAL) — Datadog backend + parity + rehearsal — OWNER: Nick, parked until ~July 2026
 
 ## Build host + dev loop
 
@@ -104,4 +107,5 @@ good source material to capture.
 ## Open items needing Michael
 
 1. Grafana 12.4.x vs latest 13.0.2 — confirm the deliberate non-latest pin is acceptable.
-2. Datadog key availability (gates Phase 7).
+2. Datadog approval + key (gates Phase 7, Nick's scope; expected ~July 2026). Non-blocking for the
+   CNCF fallback, which is complete.
