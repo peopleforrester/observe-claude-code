@@ -74,7 +74,10 @@ Grafana 12.4.x (latest is 13.0.2) · OTel semconv v1.42.0 · OTel Weaver v0.23.0
       fixed a Phase 4 dashboard bug: Loki event_name has NO `claude_code.` prefix (it's
       `tool_decision`, `mcp_server_connection`). 36 tests green. Live session runs via
       demo/run-session.sh (kept as a documented smoke, not an automated claude-spawning test).
-- [ ] Phase 6 — Capture + re-emit offline replay (highest risk) — OWNER: Michael, next
+- [x] Phase 6 — Offline replay. Collector file/capture exporter on all 3 pipelines → JSON-lines;
+      demo/replay/replay.py shifts timestamps to "now" and re-emits so dashboards move offline.
+      capture-session.sh snapshots a real run (gitignored — PII); committed sample is synthetic with
+      a PII guard test. 40 tests green. Screen-capture floor still to record (stage-day task).
 - [ ] Phase 7 (FINAL) — Datadog backend + parity + rehearsal — OWNER: Nick, parked until ~July 2026
 
 ## Build host + dev loop
@@ -96,17 +99,15 @@ target — Drive is a build artifact, never hand-maintained. See `handoff/README
 
 ## Last completed step
 
-Phase 5 done on branch `feature/phase-5-mcp` (3 TDD batches: MCP server, registration+hook,
-scripted session). 36 integration tests pass; the live session emits the full security story.
-Next: merge to staging.
+Phase 6 done on branch `feature/phase-6-replay` (3 TDD batches: capture, replayer, operationalize).
+40 integration tests pass. The open CNCF demo is now end-to-end with an offline replay safety net.
+Next: merge to staging + main.
 
 ## Next step
 
-Phase 6: offline replay (highest risk). Capture one real run's OTLP (a `file`/`debug` exporter on
-the Collector, or a parallel capture) into `demo/replay/`, then a script that re-emits it over OTLP
-to the Collector with freshened timestamps so the dashboards move with the box offline. Decide the
-capture mechanism first; keep a screen recording as the floor. The Phase 3 + Phase 5 live runs are
-good source material to capture.
+The open CNCF half is complete (Phases 1–6). Remaining: Phase 7 (Datadog — Nick, ~July), and
+optional polish — the OTel Weaver beat (researched, not built) and recording the screen-capture
+floor on stage day. No open build work is blocked.
 
 ## Open items needing Michael
 
