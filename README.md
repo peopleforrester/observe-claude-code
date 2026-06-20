@@ -16,13 +16,14 @@ The demo answers three questions on screen, not in narration:
 
 ## Status
 
-The **open CNCF half is functionally complete and validated against real agent telemetry**: a real
-session runs, telemetry fans out through the Collector into Prometheus/Loki/Jaeger, and lands on a
-provisioned Grafana dashboard — including the denied-deploy security moment. 36 integration tests
-pass against the live stack.
+The **open CNCF half is complete and validated against real agent telemetry**: a real session runs,
+telemetry fans out through the Collector into Prometheus/Loki/Jaeger, lands on a provisioned Grafana
+dashboard (including the denied-deploy security moment), and an offline replay re-emits canned
+telemetry so the dashboards move with the box offline. 40 integration tests pass against the live
+stack.
 
-Remaining: offline replay (the stage safety net) and the Datadog backend integration. See
-[`docs/design.md`](docs/design.md) and [`PROJECT_STATE.md`](PROJECT_STATE.md).
+Remaining: the Datadog backend integration (Nick, ~July). See [`docs/design.md`](docs/design.md)
+and [`PROJECT_STATE.md`](PROJECT_STATE.md).
 
 ## Backend roles (read this)
 

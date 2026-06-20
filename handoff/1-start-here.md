@@ -14,8 +14,8 @@ the demo answers three questions: **productivity, cost, security.**
 
 The open CNCF half is **built and validated** — a real session's telemetry flows through the
 Collector into all three backends and onto a Grafana dashboard, including a denied "deploy to prod"
-security moment. 36 integration tests pass. The build lives in the repo, and its default branch
-reflects everything:
+security moment, with an offline replay so the dashboards move even with no live agent. 40
+integration tests pass. The build lives in the repo, and its default branch reflects everything:
 
 **github.com/peopleforrester/observe-claude-code**
 

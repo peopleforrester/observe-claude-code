@@ -17,7 +17,7 @@ Datadog integration is the final phase and is **parked until approval (expected 
 | Telemetry env file | Michael | Done |
 | Custom prod-api MCP server + scripted session + deny hook | Michael | Done |
 | OTel Weaver validation beat | Michael | Researched; build pending |
-| Offline replay (stage safety net) | Michael | Next (Phase 6) |
+| Offline replay (stage safety net) | Michael | Done |
 | Run of show / talk structure | Michael | In progress |
 | **Datadog backend integration** | **Nick** | **Parked → July** |
 | **Datadog-side views (primary on-stage surface)** | **Nick** | **Parked → July** |
