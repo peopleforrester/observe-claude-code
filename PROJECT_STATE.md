@@ -90,6 +90,10 @@ stack on localhost.
 **~63 `claude` processes run on this box.** Never kill/signal/interfere with them — no pkill,
 killall, or broad signals. All work stays scoped to `occ-*` containers and `~/observe-claude-code`.
 
+**Handoff docs → Google Drive:** the co-speaker onboarding set lives in `handoff/` (source of
+truth) and publishes to the shared Drive folder via `make publish-handoff`. Edit a source, run the
+target — Drive is a build artifact, never hand-maintained. See `handoff/README.md` for the mapping.
+
 ## Last completed step
 
 Phase 5 done on branch `feature/phase-5-mcp` (3 TDD batches: MCP server, registration+hook,

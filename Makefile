@@ -5,7 +5,7 @@ REMOTE_DIR ?= observe-claude-code
 COMPOSE    := docker compose --project-directory . -f compose/docker-compose.yml
 REMOTE     := ssh $(VPS) 'export PATH=$$HOME/.local/bin:$$PATH; cd $(REMOTE_DIR) &&
 
-.PHONY: sync up down restart ps logs test clean
+.PHONY: sync up down restart ps logs test clean publish-handoff
 
 # Additive sync only — never deletes on the remote (see no-destructive-sync rule).
 sync:
@@ -34,3 +34,8 @@ test: sync
 # Tear down including named volumes (destructive to stack data only, not source).
 clean:
 	$(REMOTE) $(COMPOSE) down -v'
+
+# Publish the numbered handoff docs from the repo to the shared Google Drive folder.
+# Run after editing anything under handoff/ (or the spec / run-of-show it sources).
+publish-handoff:
+	bash scripts/publish-handoff.sh
