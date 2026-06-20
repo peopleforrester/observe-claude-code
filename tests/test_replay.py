@@ -34,3 +34,30 @@ def test_collector_captures_otlp_to_file(http):
         return CAPTURE_FILE.exists() and probe in CAPTURE_FILE.read_text()
 
     assert wait_until(captured, what="capture file contains the probe span")
+
+
+def test_replayer_reemits_sample_with_fresh_timestamps(http):
+    import subprocess
+
+    # The sample carries 2020 timestamps; after replay the data must appear in a "now" window,
+    # which only happens if the replayer shifted the timestamps.
+    result = subprocess.run(
+        ["python3", "demo/replay/replay.py", "--capture", "demo/replay/session-sample.jsonl"],
+        cwd=REPO_ROOT, capture_output=True, text=True, timeout=60,
+    )
+    assert result.returncode == 0, f"replayer failed: {result.stderr}"
+
+    # Metric -> Prometheus (instant query only finds it if the timestamp is recent).
+    def metric_fresh():
+        q = http.get("http://localhost:9090/api/v1/query", params={"query": "occ_replay_probe"})
+        return q.status_code == 200 and bool(q.json()["data"]["result"])
+
+    assert wait_until(metric_fresh, what="replayed metric is fresh in Prometheus")
+
+    # Trace -> Jaeger, recent.
+    def trace_present():
+        q = http.get("http://localhost:16686/api/traces",
+                     params={"service": "occ-replay-sample", "lookback": "1h", "limit": 5})
+        return q.status_code == 200 and bool(q.json().get("data"))
+
+    assert wait_until(trace_present, what="replayed trace in Jaeger")
