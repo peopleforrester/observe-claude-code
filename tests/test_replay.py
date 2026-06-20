@@ -1,5 +1,6 @@
 # ABOUTME: Verifies the Collector captures OTLP to a file and the replayer re-emits it freshly.
 # ABOUTME: Underpins the offline replay — the stage safety net when the box is offline.
+import importlib.util
 import time
 
 import httpx
@@ -7,6 +8,36 @@ import httpx
 from conftest import COLLECTOR_OTLP_HTTP, REPO_ROOT, wait_until
 
 CAPTURE_FILE = REPO_ROOT / "demo" / "replay" / "raw" / "otlp-capture.jsonl"
+SAMPLE_FILE = REPO_ROOT / "demo" / "replay" / "session-sample.jsonl"
+# Identifiers that must never reach the public repo via a committed capture.
+PII_FIELDS = ["user_email", "user_account_uuid", "user_account_id", "user_id", "organization_id"]
+
+
+def _load_replayer():
+    path = REPO_ROOT / "demo" / "replay" / "replay.py"
+    spec = importlib.util.spec_from_file_location("replay", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_committed_sample_has_no_pii():
+    text = SAMPLE_FILE.read_text()
+    leaked = [f for f in PII_FIELDS if f in text]
+    assert not leaked, f"committed replay sample contains PII fields: {leaked}"
+
+
+def test_replayer_shifts_all_timestamps():
+    replay = _load_replayer()
+    record = {"resourceSpans": [{"scopeSpans": [{"spans": [
+        {"startTimeUnixNano": "1577836800000000000", "endTimeUnixNano": "1577836800001000000"}
+    ]}]}]}
+    assert max(replay.iter_timestamps(record)) == 1577836800001000000
+    delta = 1_000_000_000_000  # +1000s
+    replay.shift_timestamps(record, delta)
+    span = record["resourceSpans"][0]["scopeSpans"][0]["spans"][0]
+    assert int(span["startTimeUnixNano"]) == 1577836800000000000 + delta
+    assert int(span["endTimeUnixNano"]) == 1577836800001000000 + delta
 
 
 def test_collector_captures_otlp_to_file(http):
