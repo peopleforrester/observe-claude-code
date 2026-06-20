@@ -29,6 +29,11 @@ exporters:
     tls:
       insecure: true
 
+  # Capture every signal to a JSON-lines file for offline replay (the stage safety net).
+  # Mounted to demo/replay/raw on the host; a curated sample is committed for replay.
+  file/capture:
+    path: /replay/otlp-capture.jsonl
+
   # --- Datadog (Nick) — final phase, parked until approval (see docs/ownership.md) ---
   # Define the Datadog exporter here, then add it as a SECOND exporter on each pipeline below
   # so the identical OTLP stream fans to Datadog alongside the CNCF stack. Key via ~/secrets,
@@ -45,12 +50,12 @@ service:
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/prometheus]
+      exporters: [otlphttp/prometheus, file/capture]
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/loki]
+      exporters: [otlphttp/loki, file/capture]
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp/jaeger]
+      exporters: [otlp/jaeger, file/capture]

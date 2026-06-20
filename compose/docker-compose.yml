@@ -103,6 +103,7 @@ services:
     command: ["--config=/etc/otelcol/config.yaml"]
     volumes:
       - ./collector/config.yaml:/etc/otelcol/config.yaml:ro
+      - ./demo/replay/raw:/replay        # capture sink for offline replay
     ports:
       - "4317:4317"     # OTLP gRPC — the entry point Claude Code exports to
       - "4318:4318"     # OTLP HTTP
