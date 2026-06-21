@@ -1,0 +1,10 @@
+# docId|Drive title|source file
+# In-place update targets. IDs are stable — never delete/recreate; update content in place only.
+128zyroHyBZ4C9FVGzyfsLIpxd1E6eVhXf-T-dVEk6_I|1 - START HERE|handoff/1-start-here.md
+1Ju13im91JB9MwzHsZ1xWzRn-iOBgcp1UoRiOJP4mbvg|2 - Abstract|handoff/2-abstract.md
+1QtUrAifAMLxuxer7p-5de7r_KwnD1zqSe_m2fuD5wdI|3 - How It Works|handoff/3-how-it-works.md
+1yKLQzQ6ofKZXwGtEaY_knX7aODIreDkDe47DFJrSaiI|4 - Run of Show|docs/run-of-show.md
+1Dfl3DNDA2VD5Ys3aGqyCaVpYf_lP3795DlAeLDn9dQo|5 - Your Part (Datadog)|handoff/5-your-part-datadog.md
+1t_rckn4wDEIsWIYgvX7fnBVuX2R5AJYXuj17SZpDgOA|6 - Try It Yourself|handoff/6-try-it-yourself.md
+1lgaawVdqxS09_rVRIiRm8ZHY4DYDgJq8QZER_tiYjh0|Reference - Build Spec|docs/spec.md
+1zRP8TtGEvil92zwDu01Tf3szr-jUUC769FL20n0WvXY|Reference - Versions & Gotchas|handoff/reference-versions-and-gotchas.md
