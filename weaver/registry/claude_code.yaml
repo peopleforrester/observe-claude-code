@@ -1,0 +1,39 @@
+groups:
+  - id: registry.claude_code
+    type: attribute_group
+    display_name: Claude Code Attributes
+    brief: Attributes emitted by the Claude Code agent over OpenTelemetry.
+    attributes:
+      - id: claude_code.session.id
+        type: string
+        stability: development
+        brief: Unique identifier for a Claude Code session.
+        examples: ["a1b2c3d4"]
+      - id: claude_code.tool.name
+        type: string
+        stability: development
+        brief: Name of the tool the agent invoked.
+        examples: ["Bash", "Edit"]
+      - id: claude_code.tool.decision
+        type:
+          members:
+            - id: accept
+              value: "accept"
+              brief: The tool call was permitted.
+              stability: development
+            - id: reject
+              value: "reject"
+              brief: The tool call was denied by policy.
+              stability: development
+        stability: development
+        brief: Whether a tool call was accepted or rejected.
+      - id: claude_code.mcp.server_name
+        type: string
+        stability: development
+        brief: Name of the MCP server backing a tool call.
+        examples: ["prod-api"]
+      - id: claude_code.mcp.tool_name
+        type: string
+        stability: development
+        brief: Name of the MCP tool invoked.
+        examples: ["deploy", "get_status"]

@@ -16,7 +16,7 @@ Datadog integration is the final phase and is **parked until approval (expected 
 | Grafana dashboards (3 panes) | Michael | Done |
 | Telemetry env file | Michael | Done |
 | Custom prod-api MCP server + scripted session + deny hook | Michael | Done |
-| OTel Weaver validation beat | Michael | Researched; build pending |
+| OTel Weaver validation beat | Michael | Done |
 | Offline replay (stage safety net) | Michael | Done |
 | Run of show / talk structure | Michael | In progress |
 | **Datadog backend integration** | **Nick** | **Parked → July** |
