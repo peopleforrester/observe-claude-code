@@ -106,6 +106,21 @@ distinct host port (e.g. expose it on 4319→4317) to avoid the bind clash.
   If live OTLP fails on stage, replay the identical validation from the file — same command,
   same report, no network.
 
+## Verified live-check wiring (2026-06-21, built)
+
+The beat is built — see `weaver/` (registry, `live-check.sh`, `feeder.yaml`) and `weaver/README.md`.
+Empirical findings from getting it working end to end:
+
+- **`--input-source file` JSON is NOT OTLP ExportRequest JSON** — weaver wants its own sample shape
+  (a top-level array), so a real OTLP capture can't be fed as a file. Feed it over
+  `--input-source otlp` (gRPC) instead.
+- The feeder Collector (`otlpjsonfile` receiver → `otlp` exporter to weaver) needs
+  **`start_at: beginning`** (else it tails and ignores existing capture content) and
+  **`compression: none`** (weaver's OTLP receiver returns `Unimplemented: gzip ... isn't supported`).
+- live-check listens **gRPC only**; it is one-shot and exits after `--inactivity-timeout`, then
+  writes the JSON report. A successful run shows `registry_coverage > 0` with the `claude_code.*`
+  attributes seen and `gen_ai.*` flagged as non-registry (the standard-vs-custom contrast).
+
 ## Recommended stage flow
 
 1. `weaver registry check ./weaver/registry` — proves the custom registry is valid (slide/live).

@@ -26,6 +26,17 @@ def test_registry_defines_core_agent_attributes():
     assert {"accept", "reject"} <= members
 
 
+def test_live_check_feeder_has_required_settings():
+    # These two settings are load-bearing for live-check and easy to lose:
+    # start_at:beginning (else the file's existing content is ignored) and
+    # compression:none (weaver's OTLP receiver rejects gzip).
+    feeder = yaml.safe_load((REPO_ROOT / "weaver" / "feeder.yaml").read_text())
+    receiver = feeder["receivers"]["otlpjsonfile"]
+    assert receiver.get("start_at") == "beginning"
+    exporter = feeder["exporters"]["otlp/weaver"]
+    assert exporter.get("compression") == "none"
+
+
 def test_weaver_registry_check_passes():
     result = subprocess.run(
         ["docker", "run", "--rm", "-v", f"{REGISTRY_DIR}:/registry",

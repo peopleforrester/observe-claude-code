@@ -1,0 +1,20 @@
+# ABOUTME: One-shot Collector that pushes a captured OTLP-JSON sample to weaver live-check over gRPC.
+# ABOUTME: Used by weaver/live-check.sh to feed weaver deterministically and offline.
+receivers:
+  otlpjsonfile:
+    include: [/capture.jsonl]
+    start_at: beginning
+processors:
+  batch: {}
+exporters:
+  otlp/weaver:
+    endpoint: occ-weaver:4317
+    tls:
+      insecure: true
+    compression: none   # weaver's OTLP receiver does not support gzip
+service:
+  pipelines:
+    traces:
+      receivers: [otlpjsonfile]
+      processors: [batch]
+      exporters: [otlp/weaver]
