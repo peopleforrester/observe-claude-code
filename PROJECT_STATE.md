@@ -105,9 +105,9 @@ Next: merge to staging + main.
 
 ## Next step
 
-The open CNCF half is complete (Phases 1–6). Remaining: Phase 7 (Datadog — Nick, ~July), and
-optional polish — the OTel Weaver beat (researched, not built) and recording the screen-capture
-floor on stage day. No open build work is blocked.
+The open CNCF half is complete (Phases 1–6) and the OTel Weaver beat is built (registry +
+live-check; 43 tests green). Remaining: Phase 7 (Datadog — Nick, ~July), and the screen-capture
+floor to record on stage day. No open build work is blocked.
 
 ## Open items needing Michael
 
