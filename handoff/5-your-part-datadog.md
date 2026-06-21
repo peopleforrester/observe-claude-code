@@ -26,6 +26,32 @@ surface.
 4. **Parity check.** Confirm the same three views render in Datadog from the identical OTLP the CNCF
    stack receives.
 
+## The actual change (where it plugs in)
+
+In `collector/config.yaml` there's a marked spot — `# --- Datadog (Nick) ---`. Define the Datadog
+exporter there and add it as a *second* exporter on each pipeline. Roughly:
+
+```yaml
+exporters:
+  # ... existing otlphttp/prometheus, otlphttp/loki, otlp/jaeger ...
+  datadog:
+    api:
+      site: ${env:DD_SITE}        # e.g. datadoghq.com
+      key: ${env:DD_API_KEY}      # from ~/secrets, never committed
+
+service:
+  pipelines:
+    metrics: { exporters: [otlphttp/prometheus, datadog] }
+    logs:    { exporters: [otlphttp/loki, datadog] }
+    traces:  { exporters: [otlp/jaeger, datadog] }
+```
+
+That's the whole wiring — the same stream now lands in Datadog too. Verify the exact Datadog
+exporter config against current OTel Collector docs when you build it (the schema moves).
+
+Then: confirm the three views (productivity / cost / security, including the denied deploy) render
+in Datadog from that stream. That parity is the build-versus-buy story.
+
 ## What is NOT yours (already built)
 
 The CNCF stack (Prometheus, Loki, Jaeger, Grafana), the Collector pipelines themselves, the

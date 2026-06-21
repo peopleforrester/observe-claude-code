@@ -26,11 +26,15 @@ else is already built. Full detail in **doc 5 — Your Part (Datadog)**.
 
 ## Read these in order
 
-1. **START HERE** — this doc
-2. **Abstract** — what we promised the conference
-3. **Build Spec** — the technical reference for the demo
-4. **Run of Show** — the 25-minute stage flow and who drives what
-5. **Your Part (Datadog)** — exactly what's yours, what's not, and where it plugs in
+1. **START HERE** — this doc (orient)
+2. **Abstract** — what we promised the conference (the north star)
+3. **How It Works** — the demo in plain terms, with a diagram (understand)
+4. **Run of Show** — the 25-minute stage flow and who drives what (the stage)
+5. **Your Part (Datadog)** — exactly what's yours, what's not, and where it plugs in (build)
+6. **Try It Yourself** — bring the stack up and watch it move (see it for real)
+
+On the reference shelf (dip in as needed): **Reference — Build Spec** (the full technical spec)
+and **Reference — Versions & Gotchas** (pinned versions and the traps we already hit).
 
 ## Backend roles (important)
 
