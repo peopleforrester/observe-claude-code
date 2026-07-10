@@ -3,17 +3,21 @@
 ABOUTME: Durable build state for the observe-claude-code demo. Read this first when resuming.
 ABOUTME: Source of truth across sessions; reconcile against git log/status before trusting it.
 
-**Last updated:** 2026-06-22
+**Last updated:** 2026-07-10
 **Branch:** `staging` (work here; PR to `main` after tests pass — never push main directly)
 **Repo:** github.com/peopleforrester/observe-claude-code
 
-> ## ⏸ PAUSED — hold all further build until KubeCon NA approval is known (Michael, 2026-06-22)
+> ## ⏸ PAUSED — hold all further build (Michael; refreshed 2026-07-10)
+> **Gating decision:** waiting to hear on **KubeCon NA acceptance first**. Michael has one talk
+> accepted for the season, but it may not be this one — so whether/how much of this demo gets more
+> work is still open. Do **not** start new build work until Michael confirms.
+>
 > The Michael-owned build is **feature-complete and parked at a clean point** — not mid-task.
-> Phases 1–6 + the Weaver beat are done; 43 tests green; `main` == `staging`. The Drive handoff
-> walkthrough is live and self-updating. Do **not** start new build work until Michael confirms how
-> much KubeCon NA / AGNTCon NA work is happening. When un-paused, candidates are: Phase 7 (Datadog —
-> Nick, ~July) and the stage-day screen-capture floor. Also pending Michael's go: sharing the Drive
-> folder with Nick (`nickisaacs@datadog.com`, commenter) — staged, not sent.
+> Phases 1–6 + the Weaver beat are done; 43 tests green; `main` == `staging`; everything pushed.
+> The Drive handoff walkthrough is live and self-updating (in place). When un-paused, candidates
+> are: Phase 7 (Datadog — Nick, ~July) and the stage-day screen-capture floor. Also staged (not
+> sent) pending Michael's go: sharing the Drive folder with Nick (`nickisaacs@datadog.com`,
+> commenter). Michael plans to email Nick about the repo.
 
 ## What this is
 
