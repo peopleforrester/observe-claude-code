@@ -25,6 +25,9 @@ __pycache__/
 .venv/
 *.egg-info/
 
+# Auto-routed transcripts from the MRF pipeline — local only, not for this public repo
+transcripts/
+
 # OS / editor noise
 .DS_Store
 *.swp
