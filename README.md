@@ -1,5 +1,7 @@
 # observe-claude-code
 
+![Hero: OTLP streams fanning from a Claude Code session into the full CNCF observability stack](assets/observe-banner-with-headshot.png)
+
 Observing an agentic coding tool (Claude Code) in production with OpenTelemetry.
 
 A single agent session emits metrics, events, and beta traces over OTLP to one OpenTelemetry
@@ -9,9 +11,9 @@ session *"What Does a Good Agent Look Like? Observing Claude Code in Production 
 
 The demo answers three questions on screen, not in narration:
 
-1. **Productivity** — is the agent moving real work, or just generating activity?
-2. **Cost** — where does the spend go, and where does it stop earning?
-3. **Security** — what did the agent touch, which tool calls and MCP servers ran, and which were
+1. **Productivity**: is the agent moving real work, or just generating activity?
+2. **Cost**: where does the spend go, and where does it stop earning?
+3. **Security**: what did the agent touch, which tool calls and MCP servers ran, and which were
    allowed or denied?
 
 ## Status
@@ -19,7 +21,7 @@ The demo answers three questions on screen, not in narration:
 The **open CNCF half is complete and validated against real agent telemetry**: a real session runs,
 telemetry fans out through the Collector into Prometheus/Loki/Jaeger, lands on a provisioned Grafana
 dashboard (including the denied-deploy security moment), and an offline replay re-emits canned
-telemetry so the dashboards move with the box offline. 40 integration tests pass against the live
+telemetry so the dashboards move with the box offline. 43 integration tests pass against the live
 stack.
 
 Remaining: the Datadog backend integration (Nick, ~July). See [`docs/design.md`](docs/design.md)
@@ -28,7 +30,7 @@ and [`PROJECT_STATE.md`](PROJECT_STATE.md).
 ## Backend roles (read this)
 
 The **commercial backend (Datadog) is the primary surface on stage**; the open CNCF stack is the
-**fallback** — always present, ready to carry the demo if the vendor path fails, and the basis of
+**fallback**, always present, ready to carry the demo if the vendor path fails, and the basis of
 the build-versus-buy comparison. Per the CFP, the on-stage slides keep the vendor **generic** ("a
 commercial backend") and do not tour Datadog dashboards; this repo names it because it is the build
 target. The open spine (OpenTelemetry, the CNCF stack, the GenAI conventions) carries the talk.
@@ -40,10 +42,10 @@ This repo is shared so a co-presenter can see clearly what is theirs versus what
 - **Michael (built, ~done):** the entire open CNCF stack, the Collector and all-OTLP pipelines, the
   telemetry env file, the custom prod-api MCP server + scripted session + deny hook (the security
   moment), the Grafana dashboards, OTel Weaver, the offline replay, and the run of show.
-- **Nick / Datadog (final phase, pending approval — expected July 2026):** the Datadog backend
-  integration only — the Datadog OTLP exporter on the Collector, the Datadog intake/key, and the
+- **Nick / Datadog (final phase, pending approval; expected ~July 2026):** the Datadog backend
+  integration: the Datadog OTLP exporter on the Collector, the Datadog intake/key, and the
   Datadog-side views (the primary on-stage surface, kept generic in slides).
-- **Not Nick's:** the CNCF stack, the MCP server, the dashboards, the replay — all built already.
+- **Not Nick's:** the CNCF stack, the MCP server, the dashboards, the replay. All built already.
 
 Full breakdown and the marked integration point: [`docs/ownership.md`](docs/ownership.md).
 Stage sequence and who drives each segment: [`docs/run-of-show.md`](docs/run-of-show.md).
@@ -96,7 +98,7 @@ demo/run-session.sh
 ```
 
 The scripted session edits a file, runs Bash, calls the MCP `get_status` tool (accepted), and
-attempts the MCP `deploy` tool, which the PreToolUse hook denies — surfacing a visible
+attempts the MCP `deploy` tool, which the PreToolUse hook denies, surfacing a visible
 `tool_decision=reject` in the Security pane. See [`demo/session.md`](demo/session.md).
 
 ## Testing
@@ -109,21 +111,22 @@ make up       # bring the stack up
 make down     # stop the stack
 ```
 
-36 tests cover: compose validity, each backend's health and OTLP ingestion, the Collector
+43 tests cover: compose validity, each backend's health and OTLP ingestion, the Collector
 fan-out round-trip (metric→Prometheus, log→Loki, trace→Jaeger), container hardening, the dashboard,
-the env file, the MCP server, and the deny policy.
+the env file, the MCP server, the deny policy, the offline replay, and the OTel Weaver semconv
+live-check.
 
-## Pinned versions (verified — see docs/versions.md)
+## Pinned versions (verified; see docs/versions.md)
 
 Collector Contrib `v0.154.0` · Prometheus `v3.12.0` · Loki `v3.7.2` · Jaeger `v2.19.0` ·
 Grafana `12.4.4` · OTel semconv `v1.42.0` · OTel Weaver `v0.23.0` · FastMCP `3.4.x`.
 
 ## Documentation
 
-- [`docs/spec.md`](docs/spec.md) — talk and demo build spec (intent)
-- [`docs/abstract.md`](docs/abstract.md) — AGNTCon submission
-- [`docs/versions.md`](docs/versions.md) — pinned GA versions + spec corrections
-- [`docs/design.md`](docs/design.md) — architecture decisions and phased build plan
-- [`docs/gotchas-otlp-integration.md`](docs/gotchas-otlp-integration.md) — OTLP-native pipeline gotchas
-- [`docs/gotchas-fastmcp.md`](docs/gotchas-fastmcp.md) — FastMCP + MCP-tool-denial recipe
-- [`docs/gotchas-weaver.md`](docs/gotchas-weaver.md) — OTel Weaver usage
+- [`docs/spec.md`](docs/spec.md): talk and demo build spec (intent)
+- [`docs/abstract.md`](docs/abstract.md): AGNTCon submission
+- [`docs/versions.md`](docs/versions.md): pinned GA versions + spec corrections
+- [`docs/design.md`](docs/design.md): architecture decisions and phased build plan
+- [`docs/gotchas-otlp-integration.md`](docs/gotchas-otlp-integration.md): OTLP-native pipeline gotchas
+- [`docs/gotchas-fastmcp.md`](docs/gotchas-fastmcp.md): FastMCP + MCP-tool-denial recipe
+- [`docs/gotchas-weaver.md`](docs/gotchas-weaver.md): OTel Weaver usage
