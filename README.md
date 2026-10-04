@@ -6,8 +6,9 @@ Observing an agentic coding tool (Claude Code) in production with OpenTelemetry.
 
 A single agent session emits metrics, events, and beta traces over OTLP to one OpenTelemetry
 Collector, which fans the **identical stream** to a commercial backend (Datadog in this build) and
-to an open CNCF stack (Prometheus, Loki, Jaeger, Grafana). Built for the AGNTCon + MCPCon NA 2026
-session *"What Does a Good Agent Look Like? Observing Claude Code in Production With OpenTelemetry."*
+to an open CNCF stack (Prometheus, Loki, Jaeger, Grafana). Built for the talk
+*"What Does a Good Agent Look Like? Observing Claude Code in Production With OpenTelemetry."*
+The talk has no booked venue at present; the demo stands on its own.
 
 The demo answers three questions on screen, not in narration:
 
