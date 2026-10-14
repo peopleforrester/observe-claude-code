@@ -126,3 +126,10 @@ floor to record on stage day. No open build work is blocked.
 1. Grafana 12.4.x vs latest 13.0.2 — confirm the deliberate non-latest pin is acceptable.
 2. Datadog approval + key (gates Phase 7, Nick's scope; expected ~July 2026). Non-blocking for the
    CNCF fallback, which is complete.
+
+## Promotion log
+
+- 2026-10-14 · pyjwt 2.13.0 to 2.15.1 (Dependabot, Issue #9) promoted staging to main with the
+  CI gate skipped because the repo has no CI workflow. Verified locally with `uv lock --check`,
+  `uv sync --locked`, and `uv run python -c "import jwt, mcp, fastmcp"`; the pytest suite needs
+  the live Compose stack and was not run.
