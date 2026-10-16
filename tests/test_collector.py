@@ -2,7 +2,11 @@
 # ABOUTME: The round-trip (OTLP in -> backends) is covered by test_roundtrip.
 import socket
 
+import pytest
+
 from conftest import COLLECTOR_HEALTH_URL, COLLECTOR_OTLP_HTTP, wait_until
+
+pytestmark = pytest.mark.integration
 
 
 def _port_open(host, port):

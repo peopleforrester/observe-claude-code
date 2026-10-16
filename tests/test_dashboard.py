@@ -2,6 +2,8 @@
 # ABOUTME: v1 schema is required — Grafana 13 cannot file-provision v2-schema dashboards.
 import json
 
+import pytest
+
 from conftest import GRAFANA_URL, REPO_ROOT, wait_until
 
 AUTH = ("admin", "admin")
@@ -55,6 +57,7 @@ def test_loki_panels_use_real_event_name_values():
     assert "tool_decision" in joined and "mcp_server_connection" in joined
 
 
+@pytest.mark.integration
 def test_dashboard_is_provisioned_in_grafana(http):
     def loaded():
         r = http.get(f"{GRAFANA_URL}/api/dashboards/uid/{UID}", auth=AUTH)

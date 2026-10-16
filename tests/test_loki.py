@@ -1,6 +1,10 @@
 # ABOUTME: Verifies Loki is ready, exposes the native OTLP logs endpoint, and has structured metadata on.
 # ABOUTME: Guards the events/logs backend of the Phase 1 stack.
+import pytest
+
 from conftest import LOKI_URL, wait_until
+
+pytestmark = pytest.mark.integration
 
 
 def test_loki_is_ready(http):
