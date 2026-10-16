@@ -1,8 +1,10 @@
 # ABOUTME: Offline unit tests for the OTLP replayer — timestamp shifting, signal routing, CLI errors.
 # ABOUTME: The HTTP post is stubbed, so these run without the Collector or any live backend.
+import http.server
 import importlib.util
 import json
 import sys
+import threading
 import time
 
 import pytest
@@ -134,6 +136,57 @@ def test_main_replays_capture_once_against_given_endpoint(replay, posted, monkey
     out = capsys.readouterr().out
     assert "Loaded" in out and "Replayed:" in out
     assert posted and all(url.startswith(ENDPOINT) for url, _ in posted)
+
+
+def test_main_loop_replays_again_after_each_interval(replay, posted, monkeypatch):
+    sleeps = []
+
+    def fake_sleep(seconds):
+        sleeps.append(seconds)
+        if len(sleeps) == 2:
+            raise KeyboardInterrupt  # end the otherwise endless --loop
+
+    monkeypatch.setattr(replay.time, "sleep", fake_sleep)
+    monkeypatch.setattr(sys, "argv", [
+        "replay.py", "--capture", str(SAMPLE_FILE), "--endpoint", ENDPOINT,
+        "--loop", "--interval", "0.5",
+    ])
+    with pytest.raises(KeyboardInterrupt):
+        replay.main()
+    per_pass = len(replay.load_records(SAMPLE_FILE))
+    assert sleeps == [0.5, 0.5]
+    assert len(posted) == 2 * per_pass, "each loop should re-emit the whole capture"
+
+
+def test_post_sends_otlp_json_and_returns_the_status(replay):
+    """Exercise the real urllib POST against a loopback server standing in for the Collector."""
+    received = []
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            length = int(self.headers["Content-Length"])
+            received.append((self.path, self.headers["Content-Type"], self.rfile.read(length)))
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *args):
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        body = _log_record(OLD_NS)
+        status = replay.post(f"http://127.0.0.1:{server.server_port}/v1/logs", body)
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    assert status == 200
+    path, content_type, raw = received[0]
+    assert path == "/v1/logs"
+    assert content_type == "application/json"
+    assert json.loads(raw) == body
 
 
 def test_main_exits_on_missing_capture(replay, posted, monkeypatch, tmp_path):
