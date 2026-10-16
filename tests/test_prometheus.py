@@ -1,8 +1,11 @@
 # ABOUTME: Verifies Prometheus is healthy, has the OTLP receiver enabled, and loads the OTLP config.
 # ABOUTME: Guards the metrics backend of the Phase 1 stack.
 import httpx
+import pytest
 
 from conftest import PROMETHEUS_URL, wait_until
+
+pytestmark = pytest.mark.integration
 
 
 def test_prometheus_is_ready(http):

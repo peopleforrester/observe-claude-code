@@ -39,3 +39,6 @@ Contrib 0.154.0 · Prometheus 3.12.0 · Loki 3.7.2 · Jaeger 2.19.0 · Grafana 1
   intentional; a permission `deny` rule withholds the tool entirely and produces no telemetry event.
 - `uv.lock` is committed for reproducibility.
 - `transcripts/` is gitignored — the MRF transcript pipeline routes here; keep that content local.
+
+Test command: `uv run pytest -m "not integration"`
+E2E command: `uv run pytest -m integration`

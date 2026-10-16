@@ -3,6 +3,8 @@
 import json
 import subprocess
 
+import pytest
+
 from conftest import REPO_ROOT, wait_until
 
 COMPOSE_BASE = [
@@ -34,6 +36,7 @@ def test_grafana_start_order_is_health_gated():
     assert deps["loki"]["condition"] == "service_started"
 
 
+@pytest.mark.integration
 def test_healthchecked_containers_report_healthy():
     for name in sorted(HEALTHCHECKED):
         container = f"occ-{name}"
@@ -44,11 +47,13 @@ def test_healthchecked_containers_report_healthy():
         assert wait_until(healthy, what=f"{name} container healthy")
 
 
+@pytest.mark.integration
 def test_loki_runs_without_a_healthcheck():
     assert _inspect("occ-loki", "{{.State.Status}}") == "running"
     assert _inspect("occ-loki", "{{if .State.Health}}has{{else}}none{{end}}") == "none"
 
 
+@pytest.mark.integration
 def test_all_containers_have_resource_limits():
     for name in sorted(ALL_SERVICES):
         container = f"occ-{name}"

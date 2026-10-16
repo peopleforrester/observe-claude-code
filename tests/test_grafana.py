@@ -1,8 +1,11 @@
 # ABOUTME: Verifies Grafana is healthy and the three provisioned datasources are connected.
 # ABOUTME: This is the Phase 1 done-criteria: Prometheus, Loki, and Jaeger reachable by uid.
 import httpx
+import pytest
 
 from conftest import GRAFANA_URL, wait_until
+
+pytestmark = pytest.mark.integration
 
 AUTH = ("admin", "admin")
 EXPECTED_UIDS = {"prometheus", "loki", "jaeger"}

@@ -1,6 +1,10 @@
 # ABOUTME: Verifies Jaeger v2 serves its UI. OTLP ingress is owned by the Collector (see test_collector).
 # ABOUTME: Trace delivery into Jaeger is covered end-to-end by the Collector round-trip test.
+import pytest
+
 from conftest import JAEGER_UI_URL, wait_until
+
+pytestmark = pytest.mark.integration
 
 
 def test_jaeger_ui_is_up(http):
