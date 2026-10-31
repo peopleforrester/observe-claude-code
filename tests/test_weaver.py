@@ -2,6 +2,7 @@
 # ABOUTME: A fast YAML structure check plus the authoritative `weaver registry check`.
 import subprocess
 
+import pytest
 import yaml
 
 from conftest import REPO_ROOT
@@ -37,6 +38,7 @@ def test_live_check_feeder_has_required_settings():
     assert exporter.get("compression") == "none"
 
 
+@pytest.mark.integration
 def test_weaver_registry_check_passes():
     result = subprocess.run(
         ["docker", "run", "--rm", "-v", f"{REGISTRY_DIR}:/registry",

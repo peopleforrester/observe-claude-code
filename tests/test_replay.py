@@ -4,6 +4,7 @@ import importlib.util
 import time
 
 import httpx
+import pytest
 
 from conftest import COLLECTOR_OTLP_HTTP, REPO_ROOT, wait_until
 
@@ -40,6 +41,7 @@ def test_replayer_shifts_all_timestamps():
     assert int(span["endTimeUnixNano"]) == 1577836800001000000 + delta
 
 
+@pytest.mark.integration
 def test_collector_captures_otlp_to_file(http):
     now = time.time_ns()
     probe = "occ-capture-probe"
@@ -67,6 +69,7 @@ def test_collector_captures_otlp_to_file(http):
     assert wait_until(captured, what="capture file contains the probe span")
 
 
+@pytest.mark.integration
 def test_replayer_reemits_sample_with_fresh_timestamps(http):
     import subprocess
 

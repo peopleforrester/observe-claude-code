@@ -2,6 +2,8 @@
 # ABOUTME: A metric reaches Prometheus, a log reaches Loki, and a trace reaches Jaeger.
 import time
 
+import pytest
+
 from conftest import (
     COLLECTOR_OTLP_HTTP,
     JAEGER_UI_URL,
@@ -9,6 +11,8 @@ from conftest import (
     PROMETHEUS_URL,
     wait_until,
 )
+
+pytestmark = pytest.mark.integration
 
 SERVICE_NAME = "occ-roundtrip"
 METRIC_NAME = "occ_roundtrip_probe"

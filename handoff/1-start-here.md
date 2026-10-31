@@ -1,7 +1,7 @@
 # 1 — START HERE
 
 **Talk:** *What Does a Good Agent Look Like? Observing Claude Code in Production With
-OpenTelemetry* — AGNTCon + MCPCon NA 2026 (San Jose, Oct 22–23). A 25-minute session.
+OpenTelemetry* — written for AGNTCon + MCPCon NA 2026. A 25-minute session.
 **Co-speakers:** Michael Forrester (Accenture, primary) + Nick Isaacs (Datadog, co-speaker).
 
 ## What this is

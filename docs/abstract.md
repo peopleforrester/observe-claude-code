@@ -2,9 +2,9 @@
 
 **Ordered to match the live Sessionize form top to bottom. Paste straight down. Reference is below the divider, not submitted.**
 
-**Event:** AGNTCon + MCPCon North America 2026 (AAIF), San Jose McEnery Convention Center, Oct 22–23.
-**Submit via:** sessionize.com/agntcon-mcpcon-na-2026
-**CFP closes:** Sun Jun 7, 11:59 PM PDT = **Mon Jun 8, 1:59 AM Austin**. Notifications Jul 17. Schedule Jul 21.
+**Event, CFP dates and outcome:** not kept here. AGNTCon + MCPCon NA 2026's dates, venue, CFP
+deadlines and this submission's outcome live in conference-knowledge (`events/cfp_pipeline.yaml`,
+id `agntcon-mcpcon-na`; `events/registry.yaml`).
 **Speakers:** Michael Forrester (Accenture) + Nick Isaacs (Datadog), co-speaker (confirmed). Session, not a Panel.
 
 **rev3 changes:** verified prior-talk recording + demo repo links appended to Benefits (field now 1,179 chars, under 1,200). rev2 set the agent-forward title and the live-demo Description.

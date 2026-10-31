@@ -21,7 +21,8 @@ ABOUTME: Source of truth across sessions; reconcile against git log/status befor
 
 ## What this is
 
-Demo + talk for AGNTCon + MCPCon NA 2026 (Oct 22–23, San Jose). One Claude Code session emits
+Demo + talk, first written as an AGNTCon + MCPCon NA 2026 submission; its dates, submission status
+and any booking live in conference-knowledge (`events/cfp_pipeline.yaml`, `events/registry.yaml`). One Claude Code session emits
 OTLP to one Collector that fans the identical stream to an open CNCF stack (Prometheus, Loki,
 Jaeger, Grafana) and later a commercial backend, side by side. See `docs/spec.md` for intent,
 `docs/design.md` for the build plan.
@@ -51,7 +52,7 @@ Nothing has been run or stood up yet — no container has been launched.
 - Talk close confirmed: **forward-looking close + cross-link** to the sibling enforcement project
   `idea-dynamic-software-blocker` (observe → enforce). Not merged; see design.md §7.
 
-## Pinned versions (verified 2026-06-15, re-verify week of Oct 2026)
+## Pinned versions (verified 2026-06-15, re-verify before the talk is next given)
 
 Collector Contrib v0.154.0 · Prometheus v3.12.0 · Loki v3.7.2 · Jaeger v2.19.0 ·
 Grafana 12.4.x (latest is 13.0.2) · OTel semconv v1.42.0 · OTel Weaver v0.23.0 (pre-1.0).

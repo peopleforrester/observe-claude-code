@@ -15,7 +15,7 @@ and `docs/gotchas-*.md` are the living source.
 | Grafana | `12.4.4` (deliberately not 13.x) |
 | OTel semconv | `v1.42.0` |
 | OTel Weaver | `v0.23.0` |
-| FastMCP | `3.4.x` |
+| FastMCP | `4.1.x` |
 
 ## Gotchas that will bite
 

@@ -1,19 +1,26 @@
-# Gotchas: FastMCP + Claude Code MCP denial (verified 2026-06-18)
+# Gotchas: FastMCP + Claude Code MCP denial (verified 2026-06-18; FastMCP 4 bump 2026-10-31)
 
-ABOUTME: Current FastMCP 3.x API and the deterministic MCP-tool-denial recipe for the demo.
+ABOUTME: Current FastMCP 4.x API and the deterministic MCP-tool-denial recipe for the demo.
 ABOUTME: Verified against gofastmcp.com and code.claude.com on 2026-06-18.
 
 ## FastMCP version and API
 
-- **Latest: `fastmcp` 3.4.2 (2026-06-06)** on PyPI. 3.x has been GA since 2026-02-18 — **2.x is a
-  release line behind**; tutorials written for 2.0 are stale. Install with `uv add fastmcp`.
-- **Import the standalone package: `from fastmcp import FastMCP`.** Do NOT use
-  `from mcp.server.fastmcp import FastMCP` — that's the frozen 1.0 bundled in the `mcp` SDK.
+- **Locked: `fastmcp` 4.1.4 (2026-10-26)**, on MCP Python SDK `mcp` 2.x. 4.0.0 went GA on
+  2026-08-31 and is built on the `2026-07-28` MCP protocol revision; 3.x still gets maintenance
+  releases. Install with `uv add fastmcp`.
+- **FastMCP 4 negotiates the protocol per connection**, so pre-2026 clients keep working: a
+  `2025-06-18` stdio handshake gets `2025-06-18` back; `tests/test_mcp_server.py` pins this.
+- The 4.0 breaking changes (server-initiated sampling/roots removed, `ctx.elicit()` old-protocol
+  only, 3.x deprecated APIs gone, snake_case MCP model fields, tasks moved to `fastmcp-tasks`) don't
+  touch this server, which only uses `FastMCP(name)`, `@mcp.tool`, and `mcp.run()`. Upgrade guide:
+  <https://gofastmcp.com/getting-started/upgrading/from-fastmcp-3>.
+- **Import the standalone package: `from fastmcp import FastMCP`.** `mcp.server.fastmcp` is gone
+  in `mcp` 2.x (it was the frozen FastMCP 1.0 bundled in the SDK).
 - Repo moved to **`PrefectHQ/fastmcp`** (was `jlowin/fastmcp`); imports and PyPI name unchanged.
 - Tool decorator: **`@mcp.tool` (no parens)** is the modern form; `@mcp.tool()` still works.
-- **v3 breaking change**: `@mcp.tool` returns the *original, still-callable function* (v2 returned
-  a `FunctionTool`). So `my_tool.name` after decorating breaks — but the function stays directly
-  callable, which is handy for unit tests.
+- **Since v3** (still true in v4): `@mcp.tool` returns the *original, still-callable function* (v2
+  returned a `FunctionTool`). So `my_tool.name` after decorating breaks — but the function stays
+  directly callable, which is handy for unit tests.
 - `mcp.run()` with no args **defaults to stdio**; `mcp.run(transport="stdio")` is the explicit form.
 - Returns: `str`/`dict`/dataclass/Pydantic → dicts and models become structured content
   automatically (no manual `TextContent` wrapping).

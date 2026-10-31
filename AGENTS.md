@@ -4,16 +4,24 @@ _Repo context file for AI coding CLIs (Claude Code, Codex, OpenCode, Gemini, etc
 
 ## What this is
 
-Conference demo for AGNTCon + MCPCon NA 2026 (Oct 22–23, San Jose): "What Does a Good Agent Look Like?
-Observing Claude Code in Production With OpenTelemetry." One Claude Code session emits OTLP to a
+Demo for the talk "What Does a Good Agent Look Like? Observing Claude Code in Production With
+OpenTelemetry," first written as an AGNTCon + MCPCon NA 2026 submission. One Claude Code session emits OTLP to a
 single Collector that fans the identical stream to a full CNCF open-source stack (Prometheus, Loki,
 Jaeger, Grafana) and — when Datadog is wired in — to a commercial backend side by side.
 
 Co-presented with Nick Isaacs (Datadog). Michael owns the CNCF side; Nick owns the Datadog side.
 
+## Where things live
+
+- **Conferences, CFPs, deadlines, submission status, attendance, travel:** conference-knowledge
+  (`~/repos/conferences/conference-knowledge`: `events/cfp_pipeline.yaml`, `events/registry.yaml`).
+  Read it there; don't copy it here. To change it, file an `agent-task` issue on
+  `peopleforrester/conference-knowledge`.
+- **The talk's content, argument and abstracts:** talks-knowledge (`~/repos/talks/talks-knowledge`).
+
 ## Stack
 
-Python 3.13 + uv + pytest · Docker Compose (single-host VPS) · FastMCP 3.4.x · OTel Collector
+Python 3.13 + uv + pytest · Docker Compose (single-host VPS) · FastMCP 4.1.x · OTel Collector
 Contrib 0.154.0 · Prometheus 3.12.0 · Loki 3.7.2 · Jaeger 2.19.0 · Grafana 12.4.x · OTel Weaver
 0.23.0
 
@@ -39,3 +47,6 @@ Contrib 0.154.0 · Prometheus 3.12.0 · Loki 3.7.2 · Jaeger 2.19.0 · Grafana 1
   intentional; a permission `deny` rule withholds the tool entirely and produces no telemetry event.
 - `uv.lock` is committed for reproducibility.
 - `transcripts/` is gitignored — the MRF transcript pipeline routes here; keep that content local.
+
+Test command: `uv run pytest -m "not integration"`
+E2E command: `uv run pytest -m integration`

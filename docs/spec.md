@@ -1,7 +1,7 @@
 # observe-claude-code — Talk and Demo Build Spec (rev1)
 
 **Talk:** What Does a Good Agent Look Like? Observing Claude Code in Production With OpenTelemetry
-**Event:** AGNTCon + MCPCon NA 2026 (San Jose, Oct 22 to 23). 25-minute Session. Co-speaker Nick Isaacs (Datadog).
+**Event:** written for AGNTCon + MCPCon NA 2026 as a 25-minute Session; dates, venue and submission status live in conference-knowledge. Co-speaker Nick Isaacs (Datadog).
 **Repo:** github.com/peopleforrester/observe-claude-code
 **Spec date:** 2026-06-07
 **Telemetry surface verified against:** code.claude.com/docs/en/monitoring-usage (fetched 2026-06-07). Confirm again before the event, since the schema is still moving (traces are beta).

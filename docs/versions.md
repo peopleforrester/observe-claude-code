@@ -1,11 +1,11 @@
 # Pinned Versions and Verified Gotchas (as of 2026-06-15)
 
 ABOUTME: Current GA versions and breaking-change gotchas for the observe-claude-code stack.
-ABOUTME: Every version verified against official release pages on 2026-06-15. Re-verify the week of the event (Oct 2026).
+ABOUTME: Every version verified against official release pages on 2026-06-15. Re-verify before the talk is next given.
 
 All version numbers below were confirmed against official GitHub release pages and
 vendor docs on 2026-06-15, not from training data. The schema and CNCF stack are
-both moving; **re-verify the week of Oct 22, 2026** before the recording goes final.
+both moving; **re-verify before the talk is next given** and before the recording goes final.
 
 ## Version matrix
 

@@ -3,7 +3,7 @@
 The submitted talk abstract — the source of truth for what we promised the conference. Keep the
 demo and the slides faithful to this.
 
-**Event:** AGNTCon + MCPCon North America 2026 (AAIF), San Jose, Oct 22–23.
+**Written for:** AGNTCon + MCPCon North America 2026 (AAIF).
 **Format:** Session Presentation (25 minutes). **Audience level:** Intermediate.
 **Topic:** Building Reliable Agent Systems.
 **Speakers:** Michael Forrester (Accenture) + Nick Isaacs (Datadog).

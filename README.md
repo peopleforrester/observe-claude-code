@@ -8,7 +8,8 @@ A single agent session emits metrics, events, and beta traces over OTLP to one O
 Collector, which fans the **identical stream** to a commercial backend (Datadog in this build) and
 to an open CNCF stack (Prometheus, Loki, Jaeger, Grafana). Built for the talk
 *"What Does a Good Agent Look Like? Observing Claude Code in Production With OpenTelemetry."*
-The talk has no booked venue at present; the demo stands on its own.
+Where the talk is submitted or booked lives in conference-knowledge, not here; the demo stands on
+its own.
 
 The demo answers three questions on screen, not in narration:
 
@@ -120,7 +121,7 @@ live-check.
 ## Pinned versions (verified; see docs/versions.md)
 
 Collector Contrib `v0.154.0` · Prometheus `v3.12.0` · Loki `v3.7.2` · Jaeger `v2.19.0` ·
-Grafana `12.4.4` · OTel semconv `v1.42.0` · OTel Weaver `v0.23.0` · FastMCP `3.4.x`.
+Grafana `12.4.4` · OTel semconv `v1.42.0` · OTel Weaver `v0.23.0` · FastMCP `4.1.x`.
 
 ## Documentation
 
