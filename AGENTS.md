@@ -36,8 +36,9 @@ Contrib 0.154.0 · Prometheus 3.12.0 · Loki 3.7.2 · Jaeger 2.19.0 · Grafana 1
 
 - **Install:** `uv sync --dev`
 - **Test:** `uv run pytest -m "not integration"` (offline unit tests; no stack needed). Integration
-  smoke suite: `uv run pytest -m integration` (requires live Compose stack). Plain `uv run pytest`
-  runs both.
+  smoke suite: `uv run pytest -m integration` (needs a working `docker`; it brings the Compose
+  stack up with `up -d --wait`, reuses one that is already running, and takes down only a stack
+  it started). Plain `uv run pytest` runs both.
 - **Bring stack up:** `make up` (runs via `ssh netcup 'make -C ~/observe-claude-code up'`)
 - **Bring stack down:** `make down`
 - **Run scripted demo session:** `bash demo/run-session.sh`

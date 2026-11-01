@@ -1,8 +1,9 @@
 # ABOUTME: Shared pytest fixtures and a polling helper for the live-stack integration tests.
-# ABOUTME: Tests run on the VPS and probe each service on localhost.
+# ABOUTME: Integration tests bring the Compose stack up themselves and probe it on localhost.
 import contextlib
 import fcntl
 import os
+import subprocess
 import time
 from pathlib import Path
 
@@ -73,6 +74,52 @@ def wait_until(predicate, *, timeout=DEFAULT_WAIT_TIMEOUT, interval=2.0, what="c
         time.sleep(interval)
     suffix = f" (last error: {last_error})" if last_error else ""
     raise TimeoutError(f"Timed out after {timeout:.0f}s waiting for {what}{suffix}")
+
+
+COMPOSE_BASE = [
+    "docker", "compose", "--project-directory", ".", "-f", "compose/docker-compose.yml",
+]
+# Ceiling for `up --wait`: image pulls on a cold host plus the health-gated start order.
+COMPOSE_UP_TIMEOUT = 600
+
+
+def _compose(*args, timeout=120):
+    return subprocess.run([*COMPOSE_BASE, *args], cwd=REPO_ROOT,
+                          capture_output=True, text=True, timeout=timeout)
+
+
+@contextlib.contextmanager
+def compose_up(compose=_compose):
+    """Bring the Compose stack up for the block; take it down after only if this call started it.
+
+    `up -d --wait` is idempotent, so a stack that is already running (the demo box) is
+    reused and left running afterwards. A stack started here is taken down even when `up`
+    fails or times out: a half-started stack would keep holding its host ports after the run.
+    """
+    before = compose("ps", "-a", "-q")
+    assert before.returncode == 0, f"`docker compose ps` failed:\n{before.stderr}"
+    started_here = not before.stdout.strip()
+    try:
+        up = compose("up", "-d", "--wait", timeout=COMPOSE_UP_TIMEOUT)
+        assert up.returncode == 0, f"`docker compose up -d --wait` failed:\n{up.stderr}"
+        yield
+    finally:
+        if started_here:
+            compose("down")
+
+
+@pytest.fixture(scope="session")
+def compose_stack():
+    """Bring the Compose stack up for the integration suite; tear down only what it started."""
+    with compose_up():
+        yield
+
+
+@pytest.fixture(autouse=True)
+def _integration_needs_stack(request):
+    """Every `integration`-marked test runs against the live stack."""
+    if request.node.get_closest_marker("integration"):
+        request.getfixturevalue("compose_stack")
 
 
 @pytest.fixture(scope="session")

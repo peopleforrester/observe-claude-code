@@ -103,6 +103,10 @@ services:
     container_name: occ-collector
     restart: unless-stopped
     command: ["--config=/etc/otelcol/config.yaml"]
+    # Root in the container so the file/capture exporter can write the bind-mounted capture
+    # dir. The image's default uid 10001 maps to a subuid under rootless podman and cannot
+    # write a host-user-owned directory; container root maps back to the host user there.
+    user: "0:0"
     volumes:
       - ./collector/config.yaml:/etc/otelcol/config.yaml:ro
       - ./demo/replay/raw:/replay        # capture sink for offline replay

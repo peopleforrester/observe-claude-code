@@ -66,3 +66,29 @@ file there, and it is made `0644` so every user can open it to lock it.
 **Why session-scoped and autouse:** pytest sets up session fixtures before function ones and tears
 them down in reverse, so a session fixture that brings the stack up (#15) runs inside the lock and
 its `down` finishes before the lock is released.
+
+## 2026-11-01 · The integration suite brings its own Compose stack up (#15)
+
+**Decision:** an `integration`-marked test pulls in a session fixture (`compose_stack` in
+`tests/conftest.py`) that runs `docker compose up -d --wait` inside the #25 host lock. A stack
+already running (the demo box) is reused and left running. A stack the run started is taken down
+afterwards, and also when `up` fails or times out. The Collector runs as container root
+(`user: "0:0"`) so it can write the bind-mounted `demo/replay/raw` capture directory, and the Loki
+OTLP probe POSTs an empty batch where it used to send a GET.
+
+**Why the suite starts the stack:** the heavy gate runs `uv run pytest -m integration` on a fresh
+tree with nothing running, so every probe waited out its 90-second timeout. Starting the stack in
+the suite makes that command complete on its own, and a missing or broken `docker` fails at once
+with the `docker compose` error.
+
+**Why tear down after a failed `up`:** a half-started stack keeps its published host ports after
+the run releases the lock. It then breaks the next run on the host, which could be another user's
+or the gate's. Seen on 2026-11-01, when another project's container held host port 3000.
+
+**Why root for the Collector:** under the gate host's rootless podman, the image's uid 10001 maps to
+a subordinate uid that cannot write a directory the host user owns, so the Collector crash-looped
+on its file exporter. Container root maps back to the host user there.
+
+**Why POST for the Loki probe:** Loki answers a GET on its POST-only `/otlp/v1/logs` with 405 or
+404, depending on the route order it picks at startup. About one cold start in three gave 404. An
+empty POST always reaches the handler, which answers 422.
