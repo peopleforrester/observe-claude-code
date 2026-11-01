@@ -1,5 +1,7 @@
 # ABOUTME: Open CNCF observability stack for the observe-claude-code demo (Prometheus/Loki/Jaeger/Grafana).
 # ABOUTME: Run from the repo root with `--project-directory .`; the Collector is added in Phase 2.
+# Each published host port reads an OCC_*_PORT variable, defaulting to the service's own port, so a
+# second stack on the same host (a concurrent integration run) can publish elsewhere.
 name: observe-claude-code
 
 services:
@@ -15,7 +17,7 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     ports:
-      - "9090:9090"
+      - "${OCC_PROMETHEUS_PORT:-9090}:9090"
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9090/-/healthy"]
       interval: 10s
@@ -36,7 +38,7 @@ services:
       - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
       - loki-data:/loki
     ports:
-      - "3100:3100"
+      - "${OCC_LOKI_PORT:-3100}:3100"
     # No healthcheck: the Loki image is distroless (no shell, wget, or busybox), so an
     # in-container HTTP probe is impossible. Dependents gate on service_started instead.
     mem_limit: 1g
@@ -49,7 +51,7 @@ services:
     container_name: occ-jaeger
     restart: unless-stopped
     ports:
-      - "16686:16686"   # UI / query
+      - "${OCC_JAEGER_UI_PORT:-16686}:16686"   # UI / query
     # OTLP ingress (4317/4318) is owned by the Collector now; Jaeger still listens on
     # 4317 inside the network and receives traces from the Collector at jaeger:4317.
     healthcheck:
@@ -77,7 +79,7 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
     ports:
-      - "3000:3000"
+      - "${OCC_GRAFANA_PORT:-3000}:3000"
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:3000/api/health"]
       interval: 10s
@@ -105,9 +107,9 @@ services:
       - ./collector/config.yaml:/etc/otelcol/config.yaml:ro
       - ./demo/replay/raw:/replay        # capture sink for offline replay
     ports:
-      - "4317:4317"     # OTLP gRPC — the entry point Claude Code exports to
-      - "4318:4318"     # OTLP HTTP
-      - "13133:13133"   # health_check extension
+      - "${OCC_OTLP_GRPC_PORT:-4317}:4317"     # OTLP gRPC — the entry point Claude Code exports to
+      - "${OCC_OTLP_HTTP_PORT:-4318}:4318"     # OTLP HTTP
+      - "${OCC_COLLECTOR_HEALTH_PORT:-13133}:13133"   # health_check extension
     depends_on:
       prometheus:
         condition: service_healthy

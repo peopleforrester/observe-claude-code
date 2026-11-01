@@ -41,3 +41,28 @@ capture to the new "now", so nothing is lost by dropping the rest of the failed 
 **Why a single pass still fails:** a one-shot replay is run by hand or by the integration test,
 which checks the exit code; a silent zero exit with nothing sent would hide a dead Collector.
 `tests/test_replay_unit.py` drives both paths against a closed loopback port.
+
+## 2026-11-01 · Integration runs on one host take turns on a host lock; host ports are overridable (#25)
+
+**Decision:** both fixes the issue offered. A session-scoped autouse fixture in
+`tests/conftest.py` holds an exclusive `flock` on `/run/lock/observe-claude-code-stack.lock` for the
+whole pytest session whenever the run selects an `integration` test, so a second run on the same
+host waits (up to `OCC_STACK_LOCK_TIMEOUT`, 1800 s by default) and then fails with a message that
+names the lock. Every published host port also reads an `OCC_*_PORT` variable
+(`OCC_PROMETHEUS_PORT`, `OCC_LOKI_PORT`, `OCC_JAEGER_UI_PORT`, `OCC_GRAFANA_PORT`,
+`OCC_OTLP_GRPC_PORT`, `OCC_OTLP_HTTP_PORT`, `OCC_COLLECTOR_HEALTH_PORT`) in both
+`compose/docker-compose.yml` and `tests/conftest.py`, defaulting to today's ports.
+
+**Why the lock is the fix and the ports are the escape hatch:** each run defaults to the same ports,
+so overridable ports alone still collide unless every caller picks its own. The lock makes the
+default case safe with no setup. The port variables cover what a lock cannot: a stack that is not
+a test run's (the demo box), or a run that needs to go alongside one.
+
+**Why /run/lock:** the runs are different users, and a service's `/tmp` can be private
+(`PrivateTmp`), while `/run/lock` is one sticky world-writable directory per host. The file is
+opened without `O_CREAT` first, because `fs.protected_regular` refuses `O_CREAT` on another user's
+file there, and it is made `0644` so every user can open it to lock it.
+
+**Why session-scoped and autouse:** pytest sets up session fixtures before function ones and tears
+them down in reverse, so a session fixture that brings the stack up (#15) runs inside the lock and
+its `down` finishes before the lock is released.

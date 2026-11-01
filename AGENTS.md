@@ -57,6 +57,11 @@ Contrib 0.154.0 · Prometheus 3.12.0 · Loki 3.7.2 · Jaeger 2.19.0 · Grafana 1
 - The MCP `deploy` tool is ALLOWED (so it's advertised) but denied by a PreToolUse hook — this is
   intentional; a permission `deny` rule withholds the tool entirely and produces no telemetry event.
 - `uv.lock` is committed for reproducibility.
+- Integration runs on one host take turns: the suite holds a flock on
+  `/run/lock/observe-claude-code-stack.lock` (`OCC_STACK_LOCK`) for the whole session, waiting up
+  to `OCC_STACK_LOCK_TIMEOUT` seconds (default 1800). Each published host port reads an
+  `OCC_*_PORT` variable in both `compose/docker-compose.yml` and `tests/conftest.py`, defaulting to
+  the service's own port, so a stack can also be published elsewhere (#25).
 - `transcripts/` is gitignored — the MRF transcript pipeline routes here; keep that content local.
 
 Test command: `uv run pytest -m "not integration"`
