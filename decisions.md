@@ -1,4 +1,4 @@
-# decisions.md — observe-claude-code
+# decisions.md: observe-claude-code
 
 Append-only. Add each new decision at the end with its date and the issue it came from; never edit
 or remove an earlier entry. Decisions taken before 2026-11-01 are in `PROJECT_STATE.md` ("Locked
@@ -20,7 +20,7 @@ of 2026-11-01, and names conference-knowledge for submissions, dates and booking
 submissions, because #7 removed copied conference facts from this repo and a copied list would go
 stale.
 
-**Built from:** this repo is a source, not a derivative: the demo is written here. The Toronto
+**Built from:** this repo is the source; the demo is written here. The Toronto
 standby deck, `peopleforrester/reading-agent-mcp-calls-through-otel`, is a separate repo built from
 this one (Michael, 2026-10-05: each talk has its own repo; source repos are read, never written).
 `tests/test_repo_identity.py` fails if any of these pointers goes missing.

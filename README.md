@@ -16,9 +16,9 @@ The demo stands on its own.
 |---|---|
 | Title | What Does a Good Agent Look Like? Observing Claude Code in Production With OpenTelemetry |
 | Speakers | Michael Rishi Forrester (the open CNCF side), with Nick Isaacs of Datadog (the commercial backend side) |
-| Argument | One Claude Code session's OTLP stream, fanned out to a commercial backend and an open CNCF stack, answers productivity, cost and security on screen, not in narration |
+| Argument | One Claude Code session's OTLP stream, fanned out to a commercial backend and an open CNCF stack, answers productivity, cost and security on screen |
 | Form | 25-minute demo talk |
-| Event | None booked or delivered as of 2026-11-01. Submissions, dates and bookings live in `conferences/conference-knowledge` (`events/cfp_pipeline.yaml`, `events/registry.yaml`), not here |
+| Event | None booked or delivered as of 2026-11-01. Submissions, dates and bookings live in `conferences/conference-knowledge` (`events/cfp_pipeline.yaml`, `events/registry.yaml`) |
 | Status | The open CNCF demo is built and tested; the Datadog integration is pending (see [Status](#status)) |
 | Built from | This repo is the source: the demo, Collector config, dashboards and tests are written here |
 | Registered in | `talks/talks-knowledge`: `talks/register.md` row 8 (the register entry) and the abstracts, including `abstracts/recovered/what-does-a-good-agent-look-like.md` |
