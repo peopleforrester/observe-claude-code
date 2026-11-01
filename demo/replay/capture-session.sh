@@ -11,6 +11,7 @@ RAW="demo/replay/raw/otlp-capture.jsonl"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 SNAP="demo/replay/raw/session-${STAMP}.jsonl"
 TRANSCRIPT="demo/replay/raw/session-${STAMP}.transcript.jsonl"
+SESSION_LOG="demo/replay/raw/session-${STAMP}.log"
 # Claude Code writes each session to <config dir>/projects/<project>/<session-id>.jsonl.
 PROJECTS_DIR="${CLAUDE_CONFIG_DIR:-${HOME}/.claude}/projects"
 SESSION_ID="$(python3 -c 'import uuid; print(uuid.uuid4())')"
@@ -18,12 +19,19 @@ SESSION_ID="$(python3 -c 'import uuid; print(uuid.uuid4())')"
 command -v docker >/dev/null 2>&1 || { echo "docker not available in this shell" >&2; exit 1; }
 
 echo "==> Clearing the capture file and restarting the Collector for a clean capture..."
+mkdir -p "$(dirname "${RAW}")"
 rm -f "${RAW}"
 ${COMPOSE} restart collector >/dev/null
 sleep 5
 
 echo "==> Running the scripted session ${SESSION_ID} (deploy will be denied)..."
-OCC_SESSION_ID="${SESSION_ID}" bash demo/run-session.sh >/dev/null 2>&1 || true
+# A session that fails (e.g. "Not logged in") still exports OTLP and writes a transcript, just no
+# tool spans, so stop here with its output instead of failing later at the join.
+if ! OCC_SESSION_ID="${SESSION_ID}" bash demo/run-session.sh >"${SESSION_LOG}" 2>&1; then
+  echo "the scripted session failed; its output (${SESSION_LOG}) ends:" >&2
+  tail -n 20 "${SESSION_LOG}" >&2
+  exit 1
+fi
 
 echo "==> Waiting for the export intervals to flush..."
 sleep 12

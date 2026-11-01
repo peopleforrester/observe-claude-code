@@ -21,6 +21,10 @@ under a pinned session ID, and snapshots a pair:
 - `demo/replay/raw/session-<timestamp>.transcript.jsonl`: that session's Claude Code transcript,
   copied from `${CLAUDE_CONFIG_DIR:-~/.claude}/projects/*/<session-id>.jsonl`.
 
+The session's own output goes to `demo/replay/raw/session-<timestamp>.log`. If the session fails
+(a logged-out `claude -p` still exports OTLP and writes a transcript, but no tool spans), the
+script stops there and prints the end of that log.
+
 It ends by running the join below over the pair and fails loudly if no transcript was written or if
 the OTLP and the transcript come from different sessions.
 

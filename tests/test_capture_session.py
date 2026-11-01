@@ -48,6 +48,10 @@ FAKE_CLAUDE = textwrap.dedent("""\
                      "content": [{"type": "tool_use", "id": "toolu_cap", "name": "Edit"}]}},
     ]
     (project / f"{sid}.jsonl").write_text("\\n".join(json.dumps(e) for e in entries) + "\\n")
+    if mode == "session-fails":
+        # A real logged-out `claude -p` still exports OTLP and writes its transcript, then exits 1.
+        print("Not logged in · Please run /login")
+        sys.exit(1)
 """)
 
 
@@ -141,6 +145,17 @@ def test_capture_fails_loudly_when_otlp_and_transcript_disagree_on_session(scrat
     result = _run(repo, env, FAKE_CLAUDE_MODE="wrong-session")
     assert result.returncode != 0
     assert "is not the transcript's sessionId" in result.stderr
+
+
+def test_capture_fails_loudly_with_the_session_output_when_the_session_fails(scratch):
+    repo, env, _ = scratch
+    result = _run(repo, env, FAKE_CLAUDE_MODE="session-fails")
+    assert result.returncode != 0
+    assert "the scripted session failed" in result.stderr
+    assert "Not logged in" in result.stderr, "the session's own error should be shown"
+    logs = list((repo / "demo/replay/raw").glob("session-*.log"))
+    assert len(logs) == 1 and "Not logged in" in logs[0].read_text()
+    assert _snapshots(repo) == ([], []), "a failed session leaves no capture pair to replay"
 
 
 def test_run_session_without_a_pinned_id_passes_no_session_flag(scratch):
