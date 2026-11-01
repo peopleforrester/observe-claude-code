@@ -24,3 +24,20 @@ stale.
 standby deck, `peopleforrester/reading-agent-mcp-calls-through-otel`, is a separate repo built from
 this one (Michael, 2026-10-05: each talk has its own repo; source repos are read, never written).
 `tests/test_repo_identity.py` fails if any of these pointers goes missing.
+
+## 2026-11-01 · An unreachable Collector skips the replay pass in --loop and fails a single pass (#23)
+
+**Decision:** when `demo/replay/replay.py` cannot reach the Collector at all (refused connection,
+DNS failure, socket timeout: any `OSError` out of `post()`), `--loop` prints a warning, skips the
+rest of that pass, and tries again after `--interval`. A single pass (no `--loop`) exits non-zero
+with "Collector unreachable at <endpoint>: <reason>" instead of a traceback. A 4xx/5xx rejection
+still warns per record and moves on, as #13 decided.
+
+**Why the pass, not the record:** a down Collector fails every record the same way, and with the
+10-second `urlopen` timeout, skipping record by record could stall a pass for 10 seconds per record.
+Skipping the pass costs at most one timeout per interval, and the next pass re-shifts the whole
+capture to the new "now", so nothing is lost by dropping the rest of the failed pass.
+
+**Why a single pass still fails:** a one-shot replay is run by hand or by the integration test,
+which checks the exit code; a silent zero exit with nothing sent would hide a dead Collector.
+`tests/test_replay_unit.py` drives both paths against a closed loopback port.

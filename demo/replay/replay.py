@@ -54,7 +54,11 @@ def shift_timestamps(obj, delta_ns):
 
 
 def post(url, body):
-    """POST an OTLP/JSON body; return the HTTP status code, including a 4xx/5xx rejection."""
+    """POST an OTLP/JSON body; return the HTTP status code, including a 4xx/5xx rejection.
+
+    A transport failure (refused connection, DNS failure, timeout) still raises an OSError;
+    main() decides whether that ends the run or only the current pass.
+    """
     data = json.dumps(body).encode("utf-8")
     req = urllib.request.Request(
         url, data=data, headers={"Content-Type": "application/json"}, method="POST"
@@ -117,9 +121,19 @@ def main():
     print(f"Loaded {len(records)} OTLP records from {path}")
 
     while True:
-        counts = replay_once(records, args.endpoint)
-        print(f"Replayed: {counts['metrics']} metrics, {counts['logs']} logs, "
-              f"{counts['traces']} traces (timestamps shifted to now)")
+        try:
+            counts = replay_once(records, args.endpoint)
+        except OSError as e:  # URLError, ConnectionError and TimeoutError are all OSErrors
+            reason = getattr(e, "reason", e)
+            if not args.loop:
+                raise SystemExit(f"Collector unreachable at {args.endpoint}: {reason}")
+            # Skip the rest of this pass rather than each record, so a down Collector costs
+            # one timeout per interval; the next pass re-shifts the capture to the new "now".
+            print(f"  warning: Collector unreachable at {args.endpoint} ({reason}); "
+                  f"skipping this pass, retrying in {args.interval:g}s", file=sys.stderr)
+        else:
+            print(f"Replayed: {counts['metrics']} metrics, {counts['logs']} logs, "
+                  f"{counts['traces']} traces (timestamps shifted to now)")
         if not args.loop:
             break
         time.sleep(args.interval)

@@ -4,9 +4,11 @@ import contextlib
 import http.server
 import importlib.util
 import json
+import socket
 import sys
 import threading
 import time
+import urllib.error
 
 import pytest
 
@@ -66,6 +68,14 @@ def loopback_collector(status):
     finally:
         server.shutdown()
         server.server_close()
+
+
+def closed_loopback_url():
+    """Return a loopback URL whose port was just bound and released, so connecting is refused."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    return f"http://127.0.0.1:{port}"
 
 
 def _metric_record(ts):
@@ -214,6 +224,86 @@ def test_post_returns_a_rejection_status_instead_of_raising(replay, rejection):
         status = replay.post(f"{base_url}/v1/metrics", _metric_record(OLD_NS))
     assert status == rejection
     assert len(received) == 1
+
+
+def test_post_raises_when_the_collector_port_is_closed(replay):
+    with pytest.raises(urllib.error.URLError):
+        replay.post(f"{closed_loopback_url()}/v1/logs", _log_record(OLD_NS))
+
+
+def test_main_single_pass_exits_clearly_when_the_collector_is_unreachable(replay, monkeypatch):
+    endpoint = closed_loopback_url()
+    monkeypatch.setattr(sys, "argv", [
+        "replay.py", "--capture", str(SAMPLE_FILE), "--endpoint", endpoint,
+    ])
+    with pytest.raises(SystemExit, match=f"Collector unreachable at {endpoint}"):
+        replay.main()
+
+
+def test_main_loop_warns_and_retries_when_the_collector_is_unreachable(
+    replay, monkeypatch, capsys
+):
+    """A closed Collector port must cost one warning per pass, not kill the --loop."""
+    sleeps = []
+
+    def fake_sleep(seconds):
+        sleeps.append(seconds)
+        if len(sleeps) == 2:
+            raise KeyboardInterrupt  # end the otherwise endless --loop
+
+    endpoint = closed_loopback_url()
+    monkeypatch.setattr(replay.time, "sleep", fake_sleep)
+    monkeypatch.setattr(sys, "argv", [
+        "replay.py", "--capture", str(SAMPLE_FILE), "--endpoint", endpoint,
+        "--loop", "--interval", "0.5",
+    ])
+    with pytest.raises(KeyboardInterrupt):
+        replay.main()
+
+    assert sleeps == [0.5, 0.5], "the loop should keep its interval through the outage"
+    captured = capsys.readouterr()
+    assert captured.err.count(f"Collector unreachable at {endpoint}") == 2
+    assert "Replayed:" not in captured.out
+
+
+@pytest.mark.parametrize("failure", [
+    urllib.error.URLError(ConnectionRefusedError(111, "Connection refused")),
+    TimeoutError("timed out"),
+])
+def test_main_loop_skips_the_rest_of_a_failed_pass_then_recovers(
+    replay, monkeypatch, capsys, failure
+):
+    calls = []
+
+    def flaky_post(url, body):
+        calls.append(url)
+        if len(calls) == 1:
+            raise failure
+        return 200
+
+    sleeps = []
+
+    def fake_sleep(seconds):
+        sleeps.append(seconds)
+        if len(sleeps) == 2:
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(replay, "post", flaky_post)
+    monkeypatch.setattr(replay.time, "sleep", fake_sleep)
+    monkeypatch.setattr(sys, "argv", [
+        "replay.py", "--capture", str(SAMPLE_FILE), "--endpoint", ENDPOINT,
+        "--loop", "--interval", "0.5",
+    ])
+    with pytest.raises(KeyboardInterrupt):
+        replay.main()
+
+    per_pass = len(replay.load_records(SAMPLE_FILE))
+    assert len(calls) == 1 + per_pass, (
+        "the failed pass should stop at its first transport error; the next pass re-emits it all"
+    )
+    captured = capsys.readouterr()
+    assert captured.err.count("skipping this pass") == 1
+    assert captured.out.count("Replayed:") == 1
 
 
 def test_main_exits_on_missing_capture(replay, posted, monkeypatch, tmp_path):

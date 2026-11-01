@@ -30,6 +30,11 @@ The replayer shifts every OTLP timestamp so the capture ends at "now" (internal 
 then posts to the Collector's OTLP/HTTP endpoint — which fans it to all backends exactly like a live
 run (and to the commercial backend once that's wired in).
 
+If the Collector rejects a record (4xx/5xx), the replayer warns and moves on to the next record. If
+it cannot reach the Collector at all (refused connection, DNS failure, timeout), a single pass exits
+non-zero with a clear message; `--loop` warns, skips the rest of that pass, and tries again after
+`--interval`, so a Collector restart on stage does not end the loop.
+
 ## PRIVACY — do not commit real captures
 
 Real captures include account/user identifiers (`user_email`, `user_account_uuid`,
