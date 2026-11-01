@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ABOUTME: Capture one real scripted session's OTLP and its transcript as a pair for offline replay.
-# ABOUTME: Snapshots are gitignored — real captures carry account identifiers and prompt text; never commit them.
+# ABOUTME: Snapshots are gitignored. Real captures carry account identifiers and prompt text; never commit them.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -28,13 +28,13 @@ OCC_SESSION_ID="${SESSION_ID}" bash demo/run-session.sh >/dev/null 2>&1 || true
 echo "==> Waiting for the export intervals to flush..."
 sleep 12
 
-[[ -s "${RAW}" ]] || { echo "no OTLP captured at ${RAW} — is the Collector up?" >&2; exit 1; }
+[[ -s "${RAW}" ]] || { echo "no OTLP captured at ${RAW}. Is the Collector up?" >&2; exit 1; }
 cp "${RAW}" "${SNAP}"
 echo "==> Captured $(wc -l < "${SNAP}") OTLP records -> ${SNAP}"
 
 SOURCE_TRANSCRIPT="$(find "${PROJECTS_DIR}" -name "${SESSION_ID}.jsonl" -print -quit 2>/dev/null || true)"
 if [[ -z "${SOURCE_TRANSCRIPT}" ]]; then
-  echo "no transcript for session ${SESSION_ID} under ${PROJECTS_DIR} — did the session run?" >&2
+  echo "no transcript for session ${SESSION_ID} under ${PROJECTS_DIR}. Did the session run?" >&2
   exit 1
 fi
 cp "${SOURCE_TRANSCRIPT}" "${TRANSCRIPT}"

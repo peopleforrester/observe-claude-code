@@ -56,7 +56,7 @@ def _tool_result(tool_use_id):
 
 
 def _transcript():
-    """Two turns: the second turn's tool_use must resolve to the second prompt, not the first."""
+    """Two turns: the second turn's tool_use must resolve to the second prompt, and never to the first."""
     return [
         _entry("user", "p1", None, "first prompt"),
         _entry("assistant", "a1", "p1", _tool_use("toolu_1")),

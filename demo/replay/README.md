@@ -5,7 +5,7 @@ ABOUTME: Real captures and their transcripts carry PII and stay local (gitignore
 
 The Collector captures every signal to `demo/replay/raw/otlp-capture.jsonl` (a `file/capture`
 exporter on all three pipelines). The replayer re-emits a capture with **freshened timestamps**, so
-the same telemetry lands in the backends "now" and the dashboards move — with no live agent and no
+the same telemetry lands in the backends "now", and the dashboards move with no live agent and no
 dependence on conference wifi.
 
 ## Capture a real session (on the demo box)
@@ -17,8 +17,8 @@ demo/replay/capture-session.sh
 This clears the capture, runs the scripted session (the denied-deploy security moment included)
 under a pinned session ID, and snapshots a pair:
 
-- `demo/replay/raw/session-<timestamp>.jsonl` — the OTLP the Collector captured.
-- `demo/replay/raw/session-<timestamp>.transcript.jsonl` — that session's Claude Code transcript,
+- `demo/replay/raw/session-<timestamp>.jsonl`: the OTLP the Collector captured.
+- `demo/replay/raw/session-<timestamp>.transcript.jsonl`: that session's Claude Code transcript,
   copied from `${CLAUDE_CONFIG_DIR:-~/.claude}/projects/*/<session-id>.jsonl`.
 
 It ends by running the join below over the pair and fails loudly if no transcript was written or if
@@ -34,7 +34,7 @@ python3 demo/replay/replay.py --capture demo/replay/raw/session-<timestamp>.json
 ```
 
 The replayer shifts every OTLP timestamp so the capture ends at "now" (internal timing preserved),
-then posts to the Collector's OTLP/HTTP endpoint — which fans it to all backends exactly like a live
+then posts to the Collector's OTLP/HTTP endpoint, which fans it to all backends exactly like a live
 run (and to the commercial backend once that's wired in).
 
 If the Collector rejects a record (4xx/5xx), the replayer warns and moves on to the next record. If
@@ -59,12 +59,12 @@ span's `session.id` must equal the transcript's `sessionId`. The transcript is f
 the committed sample pair. Claude Code calls the transcript format internal, so the join is
 version-specific: re-run a capture after a Claude Code upgrade before relying on it on stage.
 
-## PRIVACY — do not commit real captures
+## PRIVACY: do not commit real captures
 
 Real captures include account/user identifiers (`user_email`, `user_account_uuid`,
 `organization_id`, `user_id`), and the transcript beside each one holds the full prompt and tool
 text. The whole `demo/replay/raw/` directory is **gitignored** for this reason. The only committed
-pair is **`demo/replay/session-sample.jsonl`** with **`session-sample.transcript.jsonl`** — synthetic
+pair is **`demo/replay/session-sample.jsonl`** with **`session-sample.transcript.jsonl`**, synthetic
 and PII-free, built so the sample trace's tool spans join to the sample prompt, and used for tests
 and illustration. A guard test fails the suite if any PII field appears in either file.
 

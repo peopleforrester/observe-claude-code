@@ -1,4 +1,4 @@
-# ABOUTME: Offline tests for capture-session.sh — it must save the session transcript beside the OTLP.
+# ABOUTME: Offline tests for capture-session.sh. It must save the session transcript beside the OTLP.
 # ABOUTME: Runs the real script in a scratch copy of the repo with docker, sleep and claude stubbed.
 import json
 import os
