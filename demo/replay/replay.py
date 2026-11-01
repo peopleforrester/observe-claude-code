@@ -6,6 +6,7 @@ import argparse
 import json
 import sys
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -53,13 +54,18 @@ def shift_timestamps(obj, delta_ns):
 
 
 def post(url, body):
-    """POST an OTLP/JSON body; return the HTTP status code."""
+    """POST an OTLP/JSON body; return the HTTP status code, including a 4xx/5xx rejection."""
     data = json.dumps(body).encode("utf-8")
     req = urllib.request.Request(
         url, data=data, headers={"Content-Type": "application/json"}, method="POST"
     )
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        return resp.status
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.status
+    except urllib.error.HTTPError as e:
+        # urlopen raises on 4xx/5xx; return the code so one rejected record warns, not aborts.
+        e.close()
+        return e.code
 
 
 def load_records(path):

@@ -1,5 +1,6 @@
 # ABOUTME: Offline unit tests for the OTLP replayer — timestamp shifting, signal routing, CLI errors.
-# ABOUTME: The HTTP post is stubbed, so these run without the Collector or any live backend.
+# ABOUTME: The HTTP post is stubbed or aimed at a loopback server, so no Collector or live backend is needed.
+import contextlib
 import http.server
 import importlib.util
 import json
@@ -36,6 +37,35 @@ def posted(replay, monkeypatch):
 
     monkeypatch.setattr(replay, "post", fake_post)
     return calls
+
+
+@contextlib.contextmanager
+def loopback_collector(status):
+    """Serve a loopback stand-in for the Collector that answers every POST with `status`.
+
+    Yields (base_url, received), where received collects (path, content_type, raw_body).
+    """
+    received = []
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            length = int(self.headers["Content-Length"])
+            received.append((self.path, self.headers["Content-Type"], self.rfile.read(length)))
+            self.send_response(status)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+        def log_message(self, *args):
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}", received
+    finally:
+        server.shutdown()
+        server.server_close()
 
 
 def _metric_record(ts):
@@ -107,11 +137,18 @@ def test_replay_once_shifts_latest_timestamp_to_now_without_mutating_source(repl
     assert end - start == 1_000_000, "relative spacing between timestamps must be preserved"
 
 
-def test_replay_once_does_not_count_rejected_posts(replay, monkeypatch, capsys):
-    monkeypatch.setattr(replay, "post", lambda url, body: 400)
-    counts = replay.replay_once([_metric_record(OLD_NS)], ENDPOINT)
+def test_replay_once_warns_and_continues_past_rejected_posts(replay, capsys):
+    """A real 4xx from the Collector must warn and move on, not abort the replay."""
+    records = [_metric_record(OLD_NS), _log_record(OLD_NS)]
+    with loopback_collector(400) as (base_url, received):
+        counts = replay.replay_once(records, base_url)
     assert counts == {"metrics": 0, "logs": 0, "traces": 0}
-    assert "/v1/metrics returned 400" in capsys.readouterr().err
+    assert [path for path, _, _ in received] == ["/v1/metrics", "/v1/logs"], (
+        "every record should still be posted after the first rejection"
+    )
+    err = capsys.readouterr().err
+    assert "/v1/metrics returned 400" in err
+    assert "/v1/logs returned 400" in err
 
 
 def test_replay_once_refuses_a_capture_without_timestamps(replay, posted):
@@ -160,33 +197,23 @@ def test_main_loop_replays_again_after_each_interval(replay, posted, monkeypatch
 
 def test_post_sends_otlp_json_and_returns_the_status(replay):
     """Exercise the real urllib POST against a loopback server standing in for the Collector."""
-    received = []
-
-    class Handler(http.server.BaseHTTPRequestHandler):
-        def do_POST(self):
-            length = int(self.headers["Content-Length"])
-            received.append((self.path, self.headers["Content-Type"], self.rfile.read(length)))
-            self.send_response(200)
-            self.end_headers()
-
-        def log_message(self, *args):
-            pass
-
-    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
-    thread.start()
-    try:
-        body = _log_record(OLD_NS)
-        status = replay.post(f"http://127.0.0.1:{server.server_port}/v1/logs", body)
-    finally:
-        server.shutdown()
-        server.server_close()
+    body = _log_record(OLD_NS)
+    with loopback_collector(200) as (base_url, received):
+        status = replay.post(f"{base_url}/v1/logs", body)
 
     assert status == 200
     path, content_type, raw = received[0]
     assert path == "/v1/logs"
     assert content_type == "application/json"
     assert json.loads(raw) == body
+
+
+@pytest.mark.parametrize("rejection", [400, 503])
+def test_post_returns_a_rejection_status_instead_of_raising(replay, rejection):
+    with loopback_collector(rejection) as (base_url, received):
+        status = replay.post(f"{base_url}/v1/metrics", _metric_record(OLD_NS))
+    assert status == rejection
+    assert len(received) == 1
 
 
 def test_main_exits_on_missing_capture(replay, posted, monkeypatch, tmp_path):
