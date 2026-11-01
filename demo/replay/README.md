@@ -1,7 +1,7 @@
 # Offline replay (the stage safety net)
 
 ABOUTME: How the demo replays canned telemetry offline so the dashboards move without a live agent.
-ABOUTME: Real captures carry PII and stay local (gitignored); only sanitized samples are committed.
+ABOUTME: Real captures and their transcripts carry PII and stay local (gitignored); only synthetic samples are committed.
 
 The Collector captures every signal to `demo/replay/raw/otlp-capture.jsonl` (a `file/capture`
 exporter on all three pipelines). The replayer re-emits a capture with **freshened timestamps**, so
@@ -14,8 +14,15 @@ dependence on conference wifi.
 demo/replay/capture-session.sh
 ```
 
-This clears the capture, runs the scripted session (the denied-deploy security moment included),
-and snapshots the result to `demo/replay/raw/session-<timestamp>.jsonl`.
+This clears the capture, runs the scripted session (the denied-deploy security moment included)
+under a pinned session ID, and snapshots a pair:
+
+- `demo/replay/raw/session-<timestamp>.jsonl` — the OTLP the Collector captured.
+- `demo/replay/raw/session-<timestamp>.transcript.jsonl` — that session's Claude Code transcript,
+  copied from `${CLAUDE_CONFIG_DIR:-~/.claude}/projects/*/<session-id>.jsonl`.
+
+It ends by running the join below over the pair and fails loudly if no transcript was written or if
+the OTLP and the transcript come from different sessions.
 
 ## Replay it offline
 
@@ -35,13 +42,31 @@ it cannot reach the Collector at all (refused connection, DNS failure, timeout),
 non-zero with a clear message; `--loop` warns, skips the rest of that pass, and tries again after
 `--interval`, so a Collector restart on stage does not end the loop.
 
+## Join a trace back to its prompt
+
+The replay keeps every trace and span ID, so a trace picked in Jaeger after a replay is the same
+trace as in the capture. `join.py` walks it back to the prompt that caused it using the paired
+transcript, with no prompt text in any backend:
+
+```bash
+python3 demo/replay/join.py --capture demo/replay/raw/session-<timestamp>.jsonl --trace <trace-id>
+```
+
+The path: trace ID → its `claude_code.tool` spans → each span's `tool_use_id` → the transcript's
+`tool_use` block with that id → up `parentUuid` past tool results → the typed user prompt. The
+span's `session.id` must equal the transcript's `sessionId`. The transcript is found by name
+(`<capture>.transcript.jsonl`); pass `--transcript` to point elsewhere. With no arguments it joins
+the committed sample pair. Claude Code calls the transcript format internal, so the join is
+version-specific: re-run a capture after a Claude Code upgrade before relying on it on stage.
+
 ## PRIVACY — do not commit real captures
 
 Real captures include account/user identifiers (`user_email`, `user_account_uuid`,
-`organization_id`, `user_id`). The whole `demo/replay/raw/` directory is **gitignored** for this
-reason. The only committed capture is **`demo/replay/session-sample.jsonl`** — a synthetic,
-PII-free sample used for tests and illustration. A guard test fails the suite if any PII field
-appears in the committed sample.
+`organization_id`, `user_id`), and the transcript beside each one holds the full prompt and tool
+text. The whole `demo/replay/raw/` directory is **gitignored** for this reason. The only committed
+pair is **`demo/replay/session-sample.jsonl`** with **`session-sample.transcript.jsonl`** — synthetic
+and PII-free, built so the sample trace's tool spans join to the sample prompt, and used for tests
+and illustration. A guard test fails the suite if any PII field appears in either file.
 
 ## On stage
 

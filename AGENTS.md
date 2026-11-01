@@ -42,6 +42,8 @@ Contrib 0.154.0 · Prometheus 3.12.0 · Loki 3.7.2 · Jaeger 2.19.0 · Grafana 1
 - **Bring stack down:** `make down`
 - **Run scripted demo session:** `bash demo/run-session.sh`
 - **Offline replay:** `uv run python demo/replay/replay.py`
+- **Capture a session (OTLP + transcript pair):** `bash demo/replay/capture-session.sh`
+- **Join a trace back to its prompt:** `uv run python demo/replay/join.py --capture <capture> --trace <id>`
 - **Publish Drive handoff docs:** `make publish-handoff`
 
 ## Conventions

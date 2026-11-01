@@ -1,6 +1,7 @@
 # ABOUTME: Verifies the Collector captures OTLP to a file and the replayer re-emits it freshly.
 # ABOUTME: Underpins the offline replay — the stage safety net when the box is offline.
 import importlib.util
+import sys
 import time
 
 import httpx
@@ -10,6 +11,7 @@ from conftest import COLLECTOR_OTLP_HTTP, REPO_ROOT, wait_until
 
 CAPTURE_FILE = REPO_ROOT / "demo" / "replay" / "raw" / "otlp-capture.jsonl"
 SAMPLE_FILE = REPO_ROOT / "demo" / "replay" / "session-sample.jsonl"
+SAMPLE_TRANSCRIPT = REPO_ROOT / "demo" / "replay" / "session-sample.transcript.jsonl"
 # Identifiers that must never reach the public repo via a committed capture.
 PII_FIELDS = ["user_email", "user_account_uuid", "user_account_id", "user_id", "organization_id"]
 
@@ -22,10 +24,11 @@ def _load_replayer():
     return module
 
 
-def test_committed_sample_has_no_pii():
-    text = SAMPLE_FILE.read_text()
+@pytest.mark.parametrize("sample", [SAMPLE_FILE, SAMPLE_TRANSCRIPT], ids=lambda p: p.name)
+def test_committed_sample_has_no_pii(sample):
+    text = sample.read_text()
     leaked = [f for f in PII_FIELDS if f in text]
-    assert not leaked, f"committed replay sample contains PII fields: {leaked}"
+    assert not leaked, f"committed replay sample {sample.name} contains PII fields: {leaked}"
 
 
 def test_replayer_shifts_all_timestamps():
@@ -95,3 +98,46 @@ def test_replayer_reemits_sample_with_fresh_timestamps(http):
         return q.status_code == 200 and bool(q.json().get("data"))
 
     assert wait_until(trace_present, what="replayed trace in Jaeger")
+
+
+def _jaeger_trace_as_otlp(trace):
+    """Recast one Jaeger /api/traces trace as OTLP/JSON spans so join.py can read it."""
+    spans = [{
+        "traceId": span["traceID"],
+        "spanId": span["spanID"],
+        "name": span["operationName"],
+        "attributes": [{"key": t["key"], "value": {"stringValue": str(t["value"])}}
+                       for t in span.get("tags", [])],
+    } for span in trace["spans"]]
+    return [{"resourceSpans": [{"scopeSpans": [{"spans": spans}]}]}]
+
+
+@pytest.mark.integration
+def test_replayed_sample_trace_joins_back_to_its_prompt(http):
+    """The stage fallback: a trace read back out of Jaeger joins to the paired transcript's prompt."""
+    import subprocess
+
+    spec = importlib.util.spec_from_file_location("join", REPO_ROOT / "demo" / "replay" / "join.py")
+    join = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = join  # dataclasses resolve their module here
+    spec.loader.exec_module(join)
+
+    result = subprocess.run(
+        ["python3", "demo/replay/replay.py", "--capture", "demo/replay/session-sample.jsonl"],
+        cwd=REPO_ROOT, capture_output=True, text=True, timeout=60,
+    )
+    assert result.returncode == 0, f"replayer failed: {result.stderr}"
+
+    trace_id = next(join.tool_spans(join.load_jsonl(SAMPLE_FILE))).trace_id
+
+    def trace_with_tool_spans():
+        q = http.get(f"http://localhost:16686/api/traces/{trace_id}")
+        if q.status_code != 200 or not q.json().get("data"):
+            return None
+        records = _jaeger_trace_as_otlp(q.json()["data"][0])
+        return records if list(join.tool_spans(records)) else None
+
+    records = wait_until(trace_with_tool_spans, what="replayed sample trace with tool spans in Jaeger")
+    joins = join.join(records, join.load_jsonl(SAMPLE_TRANSCRIPT), trace_id=trace_id)
+    assert {j.span.tool_name for j in joins} >= {"Edit", "mcp__prod-api__deploy"}
+    assert all("deploy" in j.prompt for j in joins), "every tool span should reach the sample prompt"

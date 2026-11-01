@@ -27,7 +27,13 @@ printf 'Running scripted session (deploy is expected to be denied)...\n' >&2
 # deploy is allow-listed so it stays advertised and the model actually calls it; the PreToolUse
 # hook in .claude/settings.json then denies it at the call, which is the surface-then-reject path
 # that emits tool_decision=reject (source=hook). A plain deny rule would withhold the tool instead.
-claude -p "${PROMPT}" \
+# OCC_SESSION_ID pins the session ID so capture-session.sh can find the transcript afterwards.
+SESSION_ARGS=()
+if [[ -n "${OCC_SESSION_ID:-}" ]]; then
+  SESSION_ARGS=(--session-id "${OCC_SESSION_ID}")
+fi
+
+claude -p "${PROMPT}" "${SESSION_ARGS[@]}" \
   --permission-mode acceptEdits \
   --mcp-config .mcp.json --strict-mcp-config \
   --allowedTools "mcp__prod-api__get_status,mcp__prod-api__deploy,Read,Edit,Write,Bash"
