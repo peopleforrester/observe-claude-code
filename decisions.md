@@ -66,3 +66,18 @@ file there, and it is made `0644` so every user can open it to lock it.
 **Why session-scoped and autouse:** pytest sets up session fixtures before function ones and tears
 them down in reverse, so a session fixture that brings the stack up (#15) runs inside the lock and
 its `down` finishes before the lock is released.
+
+## 2026-11-01 · Every ~/repos path this repo names is tested, not just rechecked (#4)
+
+**Decision:** `tests/test_repo_paths.py` scans every tracked text file outside `tests/` for a
+path under `~/repos` (also spelled `$HOME/repos` or `/home/michael/repos`). Offline, it fails if
+any path sits under a group the 2026-09-20/21 restructure retired (`events/`). Under the
+`integration` marker, it fails if any path does not exist under `OCC_REPOS_ROOT`, which defaults to
+the running user's `~/repos`. With no tree there, it fails and says so.
+
+**Why:** the #4 recheck found every path resolving: conference-knowledge, talks-knowledge and
+the Toronto sibling, all confirmed by the repo catalog. But a dead path in AGENTS.md fails
+silently. The file still loads and still reads as authoritative, so a recheck by hand goes stale
+at the next move. The existence check needs the tree, so it runs with the integration suite on
+the VPS as Michael. A run as another user sets `OCC_REPOS_ROOT` or fails loudly, never passes
+quietly.

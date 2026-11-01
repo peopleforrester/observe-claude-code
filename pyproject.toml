@@ -19,5 +19,5 @@ dev = [
 testpaths = ["tests"]
 addopts = "-ra"
 markers = [
-    "integration: needs the live Compose stack or the Docker daemon (run on the VPS)",
+    "integration: needs the live Compose stack, the Docker daemon or ~/repos (run on the VPS)",
 ]
