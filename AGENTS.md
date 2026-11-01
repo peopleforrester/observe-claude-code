@@ -17,7 +17,14 @@ Co-presented with Nick Isaacs (Datadog). Michael owns the CNCF side; Nick owns t
   (`~/repos/conferences/conference-knowledge`: `events/cfp_pipeline.yaml`, `events/registry.yaml`).
   Read it there; don't copy it here. To change it, file an `agent-task` issue on
   `peopleforrester/conference-knowledge`.
-- **The talk's content, argument and abstracts:** talks-knowledge (`~/repos/talks/talks-knowledge`).
+- **The talk's register entry, content, argument and abstracts:** talks-knowledge
+  (`~/repos/talks/talks-knowledge`: `talks/register.md` row 8, `abstracts/`). Read it there. To
+  change it, file an `agent-task` issue on `peopleforrester/talks-knowledge`.
+- **The Toronto standby version of this talk:** its own repo,
+  `peopleforrester/reading-agent-mcp-calls-through-otel` (`~/repos/talks/reading-agent-mcp-calls-through-otel`),
+  built from this one. This repo is its source; don't put that deck here.
+- **Build state:** `PROJECT_STATE.md`. **Decisions:** `decisions.md`, append-only: add new entries
+  at the end, never edit or remove old ones.
 
 ## Stack
 

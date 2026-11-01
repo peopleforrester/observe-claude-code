@@ -25,7 +25,10 @@ Demo + talk, first written as an AGNTCon + MCPCon NA 2026 submission; its dates,
 and any booking live in conference-knowledge (`events/cfp_pipeline.yaml`, `events/registry.yaml`). One Claude Code session emits
 OTLP to one Collector that fans the identical stream to an open CNCF stack (Prometheus, Loki,
 Jaeger, Grafana) and later a commercial backend, side by side. See `docs/spec.md` for intent,
-`docs/design.md` for the build plan.
+`docs/design.md` for the build plan. The talk's register entry (row 8) and abstracts live in
+talks-knowledge (`talks/register.md`); the Toronto standby deck built from this repo is its own
+repo, `reading-agent-mcp-calls-through-otel`. Decisions from 2026-11-01 on are appended to
+`decisions.md`.
 
 ## Verification method
 

@@ -8,8 +8,21 @@ A single agent session emits metrics, events, and beta traces over OTLP to one O
 Collector, which fans the **identical stream** to a commercial backend (Datadog in this build) and
 to an open CNCF stack (Prometheus, Loki, Jaeger, Grafana). Built for the talk
 *"What Does a Good Agent Look Like? Observing Claude Code in Production With OpenTelemetry."*
-Where the talk is submitted or booked lives in conference-knowledge, not here; the demo stands on
-its own.
+The demo stands on its own.
+
+## This talk
+
+| | |
+|---|---|
+| Title | What Does a Good Agent Look Like? Observing Claude Code in Production With OpenTelemetry |
+| Speakers | Michael Rishi Forrester (the open CNCF side), with Nick Isaacs of Datadog (the commercial backend side) |
+| Argument | One Claude Code session's OTLP stream, fanned out to a commercial backend and an open CNCF stack, answers productivity, cost and security on screen, not in narration |
+| Form | 25-minute demo talk |
+| Event | None booked or delivered as of 2026-11-01. Submissions, dates and bookings live in `conferences/conference-knowledge` (`events/cfp_pipeline.yaml`, `events/registry.yaml`), not here |
+| Status | The open CNCF demo is built and tested; the Datadog integration is pending (see [Status](#status)) |
+| Built from | This repo is the source: the demo, Collector config, dashboards and tests are written here |
+| Registered in | `talks/talks-knowledge`: `talks/register.md` row 8 (the register entry) and the abstracts, including `abstracts/recovered/what-does-a-good-agent-look-like.md` |
+| Sibling | [`peopleforrester/reading-agent-mcp-calls-through-otel`](https://github.com/peopleforrester/reading-agent-mcp-calls-through-otel): the Toronto standby version of this talk, a 25-minute deck angled on MCP calls, built from this repo |
 
 The demo answers three questions on screen, not in narration:
 
@@ -82,6 +95,7 @@ OpenTelemetry Collector (one config, three pipelines, all-OTLP exporters)
 | `scripts/bootstrap-docker.sh` | One-time Docker install for the demo host |
 | `tests/` | pytest integration suite run against the live stack |
 | `Makefile` | sync / up / down / test dev loop |
+| `PROJECT_STATE.md`, `decisions.md` | Build state, and the append-only decision log |
 
 ## How to run
 
