@@ -66,3 +66,32 @@ file there, and it is made `0644` so every user can open it to lock it.
 **Why session-scoped and autouse:** pytest sets up session fixtures before function ones and tears
 them down in reverse, so a session fixture that brings the stack up (#15) runs inside the lock and
 its `down` finishes before the lock is released.
+
+## 2026-11-01 · A run that starts its own stack moves off host ports already taken (#26)
+
+**Decision:** option 1 of the three the issue offered. Inside the #25 host lock, and only when no
+container of this Compose project exists on the host, `tests/conftest.py` checks each default host
+port before the stack starts. A port another listener holds on `0.0.0.0` moves to one the kernel
+reports free. The matching `OCC_*_PORT` variable is exported to the process environment, which
+`docker compose` inherits, and the endpoint constants (`GRAFANA_URL`, `GRAFANA_PORT` and the rest)
+are rebound in `conftest` and in every collected test module. A variable the caller set is used
+as set, even when its port is taken, so the failure stays loud. Each moved port is named in the
+pytest terminal summary.
+
+**Why not an uncommon port block (option 2):** fixed ports collide with whatever else picks them,
+which is the #25 reasoning against a shared default; an uncommon block only makes the collision
+rarer. **Why not re-running the gate (option 3):** the issue's own criterion asks for the
+collision to stop turning the gate red.
+
+**Why only when no stack exists:** a running stack (the demo box) is reused, as #15 decides, on the
+ports it already publishes. Its own containers hold the defaults there, and moving them would make
+`up` recreate the demo containers on new ports.
+
+**Why inside the lock and after collection:** the free ports are chosen right before `up`, not up
+to 30 minutes earlier while the run waits on the lock. Test modules import the constants by name
+at collection, which comes before the lock; a test function reads its module's globals when it
+runs, so rebinding them before the first test reaches every test without changing the test files.
+
+**Why the probe uses `SO_REUSEADDR`, bind and listen on `0.0.0.0`:** that is what the Compose port
+forwarder (rootlessport or docker-proxy, both Go listeners that set `SO_REUSEADDR`) does, so the
+probe agrees with it: a port left in `TIME_WAIT` by an earlier stack is free to both.

@@ -61,7 +61,10 @@ Contrib 0.154.0 · Prometheus 3.12.0 · Loki 3.7.2 · Jaeger 2.19.0 · Grafana 1
   `/run/lock/observe-claude-code-stack.lock` (`OCC_STACK_LOCK`) for the whole session, waiting up
   to `OCC_STACK_LOCK_TIMEOUT` seconds (default 1800). Each published host port reads an
   `OCC_*_PORT` variable in both `compose/docker-compose.yml` and `tests/conftest.py`, defaulting to
-  the service's own port, so a stack can also be published elsewhere (#25).
+  the service's own port, so a stack can also be published elsewhere (#25). Inside the lock, a
+  run that will start its own stack moves any default host port already taken on the host
+  (another project's container) to a free one, exporting the variable to both compose and the
+  test URLs; one it moved is named in the pytest summary. A variable you set is used as set (#26).
 - `transcripts/` is gitignored — the MRF transcript pipeline routes here; keep that content local.
 
 Test command: `uv run pytest -m "not integration"`
