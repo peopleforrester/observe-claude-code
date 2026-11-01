@@ -8,9 +8,9 @@ ABOUTME: Source of truth across sessions; reconcile against git log/status befor
 **Repo:** github.com/peopleforrester/observe-claude-code
 
 > ## ⏸ PAUSED — hold all further build (Michael; refreshed 2026-07-10)
-> **Gating decision:** waiting to hear on **KubeCon NA acceptance first**. Michael has one talk
-> accepted for the season, but it may not be this one — so whether/how much of this demo gets more
-> work is still open. Do **not** start new build work until Michael confirms.
+> **Gating decision:** waiting to hear back on another conference submission first; which one,
+> and where each submission stands, lives in conference-knowledge (`events/cfp_pipeline.yaml`), not
+> here. Whether/how much of this demo gets more work is still open. Do **not** start new build work until Michael confirms.
 >
 > The Michael-owned build is **feature-complete and parked at a clean point** — not mid-task.
 > Phases 1–6 + the Weaver beat are done; 43 tests green; `main` == `staging`; everything pushed.

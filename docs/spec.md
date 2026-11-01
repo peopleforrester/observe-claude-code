@@ -183,7 +183,7 @@ Build order for Claude Code against this spec: compose stack first, Collector co
 
 ## 11. Risks and open questions
 
-- Schema drift: traces are beta and attribute names can change before October. Re-verify against the docs the week of the event.
+- Schema drift: traces are beta and attribute names can change before the event. Re-verify against the docs the week of the event.
 - Vendor neutrality: the commercial backend is Datadog in the build because Nick co-presents. On the public slides and in the abstract it stays "a commercial backend." Do not let the vendor pane become a product tour, since this CFP rejects pitches.
 - Closed-source framing: the open spine (OpenTelemetry, the CNCF stack, the GenAI conventions) carries the talk. Claude Code is the agent being observed, not the thing being sold.
 - Repo readiness: observe-claude-code is in progress. It needs at least a working compose stack and README before the recording goes in front of reviewers, and before the link in the submission is worth keeping.

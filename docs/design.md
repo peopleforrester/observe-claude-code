@@ -166,7 +166,7 @@ Build order gates on the done-criteria in spec §3. Each phase ends green before
 
 - **Replay determinism** (Phase 6) is the thing most likely to eat time. If it slips, the
   pre-recorded screen capture (Phase 7) is the floor — never go on stage depending on wifi.
-- **Schema drift before October**: traces are beta; re-run the four verification passes the
+- **Schema drift before the event**: traces are beta; re-run the four verification passes the
   week of the event.
 - **Datadog turning into a product tour**: keep the vendor pane to the same three views, no more.
 - **Loki schema/startup**: the tsdb+v13 requirement is a hard startup gate — get Phase 1 green
