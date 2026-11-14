@@ -1,0 +1,14 @@
+# images.lock: every container image this repo depends on, pinned by digest.
+# Columns: ref  digest  source  saved   (whitespace-separated, one image per line)
+# source: repo:<owner/name[/path]>  build context in a repo we own
+#         build:<path>              built from <path> in this repo; digest may be -
+#         upstream:<url>            third-party image built from someone else's source
+#         none                      handed to us built: the saved tarball is the only copy
+#         not-an-image:<why>        a placeholder or deliberate bad example; digest -
+# Written by scripts/mirror-images.sh in llm-coding-workflow; the rule is
+# claude-config/rules/infra/image-retention.md there.
+prom/prometheus:v3.12.0 sha256:69f5241418838263316593f7274a304b095c40bcf22e57272865da91bd60a8ac upstream:https://github.com/prometheus/prometheus 2026-11-13
+grafana/loki:3.7.2 sha256:191d4fdfb7264f16989f0a57f320872620a5a7c2ceeec6229212c4190ec49b86 upstream:https://github.com/grafana/loki 2026-11-13
+jaegertracing/jaeger:2.19.0 sha256:ede4864215be4cd85bd8c3129a2fea6c5713c5653c7282c429dba123014bc68b upstream:https://github.com/jaegertracing/jaeger 2026-11-13
+grafana/grafana:12.4.4 sha256:378f94b054e5384cd74322cbf7542cff6a43e068e4011f81ea5e75323247df02 upstream:https://github.com/grafana/grafana 2026-11-13
+otel/opentelemetry-collector-contrib:0.154.0 sha256:b3079f45e19bdb7326bf49cdddce6cf60dfd865138db39f2733ea48ab17bc4cb upstream:https://github.com/open-telemetry/opentelemetry-collector-releases 2026-11-13
