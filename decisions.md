@@ -178,3 +178,29 @@ fast-forwards to `origin/staging` and stops unless staging holds f1462b1 and all
 It also takes the integration stack lock from #25 for the capture, so no other integration run on
 netcup replays its sample into the live Collector mid-capture, and it takes the stack down only if
 it started it.
+
+## 2026-11-16 · An integration test runs the real capture in the canonical netcup checkout (#37)
+
+**What #37 asked:** a test that fails when this #24 criterion stops holding: the canonical netcup
+checkout, `~/repos/talks/Value_with_Agents_Observability_in_action`, is on staging at or after
+f1462b1, and `bash demo/replay/capture-session.sh` runs there against the live Collector to the
+end. The capture tests in `tests/test_capture_session.py` stub docker, sleep and claude, so none of
+them could see that checkout or the live stack.
+
+**Decision:** `tests/test_canonical_checkout.py`, marked `integration`, holds two tests. One reads
+the checkout's git state: its HEAD is the `staging` branch and f1462b1 is an ancestor of it. The
+other checks that the checkout's Collector is running, runs the real `capture-session.sh` there, and
+requires exit 0, the script's last line, a span joined to a prompt, and one new non-empty capture
+pair in `demo/replay/raw`. The checkout path reads `OCC_CANONICAL_CHECKOUT`, defaulting to
+`~/repos/talks/Value_with_Agents_Observability_in_action` under the running user's home, and the
+capture's timeout reads `OCC_CAPTURE_TIMEOUT` (default 1200 seconds).
+
+**What it costs:** each E2E run makes one real `claude -p` session, recreates the live Collector
+as the checkout owner, and leaves one gitignored capture pair in the checkout, just as a manual
+capture does. It runs inside the integration host lock from #25, so no other integration run on
+the host replays into the Collector mid-capture. The script gets no `OCC_SESSION_ID`, `OCC_UID`
+or `OCC_GID` from the caller, and no host port the run moved for a stack of its own (#26).
+
+**Who can pass it:** only the checkout's owner on netcup, since the Collector must write into the
+owner's `demo/replay/raw`. Anywhere else it fails at once, naming the missing checkout or the
+stopped Collector; it never skips.
