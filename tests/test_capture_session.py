@@ -11,42 +11,69 @@ import pytest
 
 from conftest import REPO_ROOT
 
+SCRIPTED_PROMPT = (REPO_ROOT / "demo/session-prompt.txt").read_text().strip()
+
 # The files capture-session.sh touches, copied into a scratch repo so nothing lands in this one.
 SCRIPT_FILES = [
     "demo/replay/capture-session.sh",
     "demo/replay/join.py",
     "demo/run-session.sh",
+    "demo/session-prompt.txt",
     "env/claude-code.env",
 ]
 
 # Stands in for `claude -p`: logs its argv, writes the session transcript where Claude Code
-# would, and writes the OTLP the Collector's file exporter would have captured.
+# would, and writes the OTLP the Collector's file exporter would have captured. Like a real
+# scripted run it makes four tool calls under the prompt it was given; the PreToolUse hook denies
+# the last one, the prod-api deploy, which still gets its own claude_code.tool span.
 FAKE_CLAUDE = textwrap.dedent("""\
     import json, os, pathlib, sys
     argv = sys.argv[1:]
     pathlib.Path(os.environ["FAKE_CLAUDE_ARGV"]).write_text(json.dumps(argv))
     mode = os.environ.get("FAKE_CLAUDE_MODE", "ok")
     sid = argv[argv.index("--session-id") + 1]
+    prompt = argv[argv.index("-p") + 1]
     span_sid = "33333333-3333-4333-8333-333333333333" if mode == "wrong-session" else sid
+    calls = [("toolu_edit", "Edit"), ("toolu_bash", "Bash"),
+             ("toolu_status", "mcp__prod-api__get_status"),
+             ("toolu_deploy", "mcp__prod-api__deploy")]
+    spans = []
+    for i, (tool_use_id, tool_name) in enumerate(calls):
+        if mode == "deploy-no-span" and tool_name == "mcp__prod-api__deploy":
+            continue
+        attrs = [{"key": k, "value": {"stringValue": v}} for k, v in
+                 {"session.id": span_sid, "tool_name": tool_name,
+                  "tool_use_id": tool_use_id}.items()]
+        spans.append({"traceId": "ab" * 16, "spanId": f"{i + 1:016x}", "name": "claude_code.tool",
+                      "startTimeUnixNano": "1", "endTimeUnixNano": "2", "attributes": attrs})
     raw = pathlib.Path("demo/replay/raw")
     raw.mkdir(parents=True, exist_ok=True)
-    attrs = [{"key": k, "value": {"stringValue": v}} for k, v in
-             {"session.id": span_sid, "tool_name": "Edit", "tool_use_id": "toolu_cap"}.items()]
-    span = {"traceId": "ab" * 16, "spanId": "cd" * 8, "name": "claude_code.tool",
-            "startTimeUnixNano": "1", "endTimeUnixNano": "2", "attributes": attrs}
     (raw / "otlp-capture.jsonl").write_text(
-        json.dumps({"resourceSpans": [{"scopeSpans": [{"spans": [span]}]}]}) + "\\n")
+        json.dumps({"resourceSpans": [{"scopeSpans": [{"spans": spans}]}]}) + "\\n")
     if mode == "no-transcript":
         sys.exit(0)
     project = pathlib.Path(os.environ["CLAUDE_CONFIG_DIR"]) / "projects" / "-scratch-repo"
     project.mkdir(parents=True, exist_ok=True)
-    entries = [
-        {"type": "user", "uuid": "p1", "parentUuid": None, "sessionId": sid,
-         "message": {"role": "user", "content": "captured prompt"}},
-        {"type": "assistant", "uuid": "a1", "parentUuid": "p1", "sessionId": sid,
-         "message": {"role": "assistant",
-                     "content": [{"type": "tool_use", "id": "toolu_cap", "name": "Edit"}]}},
-    ]
+
+    def entry(kind, uuid, parent, content):
+        role = "assistant" if kind == "assistant" else "user"
+        return {"type": kind, "uuid": uuid, "parentUuid": parent, "sessionId": sid,
+                "message": {"role": role, "content": content}}
+
+    entries = [entry("user", "p1", None, prompt)]
+    parent = "p1"
+    for n, (tool_use_id, tool_name) in enumerate(calls, start=1):
+        if mode == "deploy-other-prompt" and tool_name == "mcp__prod-api__deploy":
+            entries.append(entry("user", "p2", parent, "a prompt the script never sent"))
+            parent = "p2"
+        entries.append(entry("assistant", f"a{n}", parent,
+                             [{"type": "tool_use", "id": tool_use_id, "name": tool_name}]))
+        denied = tool_name == "mcp__prod-api__deploy"
+        result = {"type": "tool_result", "tool_use_id": tool_use_id, "is_error": denied,
+                  "content": ("Production deploys are blocked by policy in this demo."
+                              if denied else "ok")}
+        entries.append(entry("user", f"r{n}", f"a{n}", [result]))
+        parent = f"r{n}"
     (project / f"{sid}.jsonl").write_text("\\n".join(json.dumps(e) for e in entries) + "\\n")
     if mode == "session-fails":
         # A real logged-out `claude -p` still exports OTLP and writes its transcript, then exits 1.
@@ -123,9 +150,41 @@ def test_capture_saves_the_session_transcript_beside_the_otlp_snapshot(scratch):
     entries = [json.loads(ln) for ln in transcripts[0].read_text().splitlines()]
     assert {e["sessionId"] for e in entries} == {sid}, "the copied transcript is the pinned session's"
 
-    assert "-> prompt p1" in result.stdout and "captured prompt" in result.stdout, (
+    assert "-> prompt p1" in result.stdout and SCRIPTED_PROMPT.splitlines()[0] in result.stdout, (
         "the capture should end by showing the trace joining back to its prompt"
     )
+
+
+def test_capture_joins_the_hook_denied_deploy_span_to_the_scripted_prompt(scratch):
+    """The denied deploy's claude_code.tool span joins back to the prompt run-session.sh sent (#38)."""
+    repo, env, argv_file = scratch
+    result = _run(repo, env)
+    assert result.returncode == 0, result.stderr + result.stdout
+
+    argv = json.loads(argv_file.read_text())
+    assert argv[argv.index("-p") + 1] == SCRIPTED_PROMPT, "the session must run the scripted prompt"
+    deploy = [ln for ln in result.stdout.splitlines() if "mcp__prod-api__deploy" in ln]
+    assert len(deploy) == 1 and "toolu_deploy" in deploy[0], result.stdout
+    assert deploy[0].rstrip().endswith("-> prompt p1"), deploy[0]
+    printed = result.stdout.split("  prompt p1:\n", 1)[1]
+    assert all(f"    {ln}" in printed for ln in SCRIPTED_PROMPT.splitlines()), (
+        "p1, the prompt the deploy joins to, must be the scripted prompt"
+    )
+
+
+def test_capture_fails_loudly_when_the_denied_deploy_has_no_tool_span(scratch):
+    repo, env, _ = scratch
+    result = _run(repo, env, FAKE_CLAUDE_MODE="deploy-no-span")
+    assert result.returncode != 0
+    assert "no claude_code.tool span for mcp__prod-api__deploy" in result.stderr, result.stderr
+
+
+def test_capture_fails_loudly_when_the_deploy_joins_to_another_prompt(scratch):
+    repo, env, _ = scratch
+    result = _run(repo, env, FAKE_CLAUDE_MODE="deploy-other-prompt")
+    assert result.returncode != 0
+    assert "mcp__prod-api__deploy span" in result.stderr, result.stderr
+    assert "joins to prompt p2, not the scripted prompt" in result.stderr, result.stderr
 
 
 def test_run_session_keeps_its_flags_and_adds_the_pinned_session_id(scratch):

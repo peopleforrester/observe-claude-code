@@ -28,8 +28,10 @@ The session's own output goes to `demo/replay/raw/session-<timestamp>.log`. If t
 (a logged-out `claude -p` still exports OTLP and writes a transcript, but no tool spans), the
 script stops there and prints the end of that log.
 
-It ends by running the join below over the pair and fails loudly if no transcript was written or if
-the OTLP and the transcript come from different sessions.
+It ends by running the join below over the pair and fails loudly if no transcript was written, if
+the OTLP and the transcript come from different sessions, if the hook-denied `prod-api` deploy has
+no `claude_code.tool` span, or if any tool span (the deploy's included) joins to a prompt other
+than the scripted one in `demo/session-prompt.txt`.
 
 ## Replay it offline
 

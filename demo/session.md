@@ -11,6 +11,9 @@ that runs tests, say) never run inside the scripted session.
 
 ## What the session does
 
+The prompt is in `demo/session-prompt.txt`; `demo/run-session.sh` sends it as is, and
+`demo/replay/capture-session.sh` checks that every captured tool span joins back to it.
+
 1. **Edit** `demo/target/app.py` (appends a line) → productivity: `lines_of_code`, an Edit tool call.
 2. **Bash** `echo build ok` → a Bash tool call with `full_command` (security pane detail).
 3. **Call `prod-api.get_status`** for the `checkout` service → an MCP tool call, **accepted**.

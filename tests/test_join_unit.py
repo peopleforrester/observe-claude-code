@@ -204,3 +204,49 @@ def test_main_exits_when_the_join_fails(join, tmp_path):
     transcript.write_text("\n".join(json.dumps(e) for e in _transcript()) + "\n")
     with pytest.raises(SystemExit, match="join failed: tool_use_id toolu_x"):
         join.main(["--capture", str(capture), "--transcript", str(transcript)])
+
+
+def test_require_passes_when_the_tool_joins_to_the_given_prompt(join):
+    joins = join.join(_capture(_tool_span("toolu_1"), _tool_span("toolu_2", tool_name="Bash")),
+                      _transcript())
+    join.require(joins, tool_name="Bash", prompt="  first prompt\n")
+
+
+def test_require_fails_when_no_span_of_the_tool_joins(join):
+    joins = join.join(_capture(_tool_span("toolu_1")), _transcript())
+    with pytest.raises(join.JoinError,
+                       match=r"no claude_code.tool span for mcp__prod-api__deploy .*\['Edit'\]"):
+        join.require(joins, tool_name="mcp__prod-api__deploy")
+
+
+def test_require_fails_when_a_span_joins_to_another_prompt(join):
+    joins = join.join(_capture(_tool_span("toolu_1"), _tool_span("toolu_3", span_id="cc" * 8)),
+                      _transcript())
+    with pytest.raises(join.JoinError,
+                       match=f"Edit span {'cc' * 8} joins to prompt p2, not the scripted prompt"):
+        join.require(joins, prompt="first prompt")
+
+
+def test_main_requires_the_samples_deploy_to_join_to_its_prompt(join, tmp_path, capsys):
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_text(join.prompt_text(join.load_jsonl(SAMPLE_TRANSCRIPT)[0]) + "\n")
+    join.main(["--capture", str(SAMPLE_FILE), "--require-tool", "mcp__prod-api__deploy",
+               "--prompt-file", str(prompt)])
+    assert "mcp__prod-api__deploy" in capsys.readouterr().out
+
+
+def test_main_exits_when_the_required_tool_has_no_span(join):
+    with pytest.raises(SystemExit, match="join failed: no claude_code.tool span for Write"):
+        join.main(["--capture", str(SAMPLE_FILE), "--require-tool", "Write"])
+
+
+def test_main_exits_when_the_spans_join_to_another_prompt(join, tmp_path):
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_text((REPO_ROOT / "demo" / "session-prompt.txt").read_text())
+    with pytest.raises(SystemExit, match="join failed: .* not the scripted prompt"):
+        join.main(["--capture", str(SAMPLE_FILE), "--prompt-file", str(prompt)])
+
+
+def test_main_exits_on_a_missing_prompt_file(join, tmp_path):
+    with pytest.raises(SystemExit, match="prompt file not found"):
+        join.main(["--capture", str(SAMPLE_FILE), "--prompt-file", str(tmp_path / "nope.txt")])

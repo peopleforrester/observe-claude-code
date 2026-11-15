@@ -204,3 +204,20 @@ or `OCC_GID` from the caller, and no host port the run moved for a stack of its 
 **Who can pass it:** only the checkout's owner on netcup, since the Collector must write into the
 owner's `demo/replay/raw`. Anywhere else it fails at once, naming the missing checkout or the
 stopped Collector; it never skips.
+## 2026-11-16 · a real capture must join the hook-denied deploy to the scripted prompt (#38)
+
+**Decision:** the scripted prompt moves out of `demo/run-session.sh` into
+`demo/session-prompt.txt`, which the script sends unchanged. `demo/replay/join.py` gains
+`--require-tool` (fail unless a `claude_code.tool` span of that tool joins) and `--prompt-file`
+(fail unless every joined span reaches exactly that prompt, whitespace at the ends aside).
+`capture-session.sh` passes `--require-tool mcp__prod-api__deploy --prompt-file
+demo/session-prompt.txt`, so every real capture fails loudly unless the hook-denied deploy has its
+own span and it, like every other tool span, joins to the scripted prompt.
+
+**Why in the capture script and not an integration test:** a real run needs a logged-in `claude`
+and a session's spend, and no capture has yet succeeded on netcup. An integration test reading a
+gitignored capture would be red on every host until one exists. The capture script is the one place
+a real run is joined, so the check lives there. `tests/test_capture_session.py` runs the real script
+with a fake `claude` shaped like a scripted run (Edit, Bash, get_status, then the deploy the hook
+denies) and fails if the check is dropped, if the deploy span goes missing, or if it joins to
+another prompt.

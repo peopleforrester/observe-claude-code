@@ -166,6 +166,22 @@ def join(capture_records, transcript_entries, trace_id=None):
     return joins
 
 
+def require(joins, *, tool_name=None, prompt=None):
+    """Check a scripted session's joins: `tool_name` has a joined span, and each span reaches `prompt`.
+
+    Prompts compare with surrounding whitespace stripped. Raises JoinError naming what is missing.
+    """
+    if tool_name is not None and not any(j.span.tool_name == tool_name for j in joins):
+        seen = sorted({j.span.tool_name for j in joins})
+        raise JoinError(f"no claude_code.tool span for {tool_name} joins to a prompt; "
+                        f"the joined spans are {seen}")
+    if prompt is not None:
+        for j in joins:
+            if j.prompt.strip() != prompt.strip():
+                raise JoinError(f"{j.span.tool_name} span {j.span.span_id} joins to prompt "
+                                f"{j.prompt_uuid}, not the scripted prompt")
+
+
 def render(joins):
     """Format joins grouped by trace: its tool spans, then the prompt each traces back to."""
     lines = []
@@ -191,15 +207,22 @@ def main(argv=None):
     parser.add_argument("--transcript",
                         help=f"session transcript (default: the capture's *{TRANSCRIPT_SUFFIX})")
     parser.add_argument("--trace", help="only join this trace ID (as shown in Jaeger)")
+    parser.add_argument("--require-tool",
+                        help="fail unless a span of this tool (e.g. mcp__prod-api__deploy) joins")
+    parser.add_argument("--prompt-file",
+                        help="fail unless every span joins to the prompt in this file")
     args = parser.parse_args(argv)
 
     capture = Path(args.capture)
     transcript = Path(args.transcript) if args.transcript else transcript_path_for(capture)
-    for path, what in ((capture, "capture"), (transcript, "transcript")):
-        if not path.exists():
+    prompt_file = Path(args.prompt_file) if args.prompt_file else None
+    for path, what in ((capture, "capture"), (transcript, "transcript"), (prompt_file, "prompt")):
+        if path is not None and not path.exists():
             raise SystemExit(f"{what} file not found: {path}")
     try:
         joins = join(load_jsonl(capture), load_jsonl(transcript), trace_id=args.trace)
+        require(joins, tool_name=args.require_tool,
+                prompt=prompt_file.read_text() if prompt_file else None)
     except JoinError as e:
         raise SystemExit(f"join failed: {e}")
     sys.stdout.write(render(joins))

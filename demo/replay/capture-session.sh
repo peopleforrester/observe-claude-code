@@ -52,8 +52,11 @@ fi
 cp "${SOURCE_TRANSCRIPT}" "${TRANSCRIPT}"
 echo "==> Captured $(wc -l < "${TRANSCRIPT}") transcript entries -> ${TRANSCRIPT}"
 
-echo "==> Checking every captured tool span joins back to its prompt..."
-python3 demo/replay/join.py --capture "${SNAP}"
+# The hook-denied deploy must have its own claude_code.tool span, and it and every other tool span
+# must join back to the scripted prompt, or the capture cannot show the denied call's cause.
+echo "==> Checking every captured tool span, the denied deploy's included, joins to the scripted prompt..."
+python3 demo/replay/join.py --capture "${SNAP}" \
+  --require-tool mcp__prod-api__deploy --prompt-file demo/session-prompt.txt
 
 echo
 echo "Replay it offline (loops for a live-looking stage demo):"
