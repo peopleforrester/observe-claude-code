@@ -257,6 +257,57 @@ def test_capture_fails_loudly_with_the_session_output_when_the_session_fails(scr
     assert _snapshots(repo) == ([], []), "a failed session leaves no capture pair to replay"
 
 
+def _git(cwd, *args):
+    # A caller's GIT_DIR or GIT_INDEX_FILE (a git hook) must not point these at another repo.
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    return subprocess.run(
+        ["git", "-c", "user.name=capture-test", "-c", "user.email=capture-test@invalid", *args],
+        cwd=cwd, env=env, check=True, capture_output=True, text=True,
+    ).stdout
+
+
+def test_capture_pair_stays_in_the_gitignored_raw_dir_and_nothing_is_staged(scratch):
+    """A capture adds nothing `git add -A` would commit: the pair and its log are ignored (#24).
+
+    The scratch repo is committed with this repo's real .gitignore first, so any file the capture
+    writes that the ignore rules miss, in demo/replay/raw or anywhere else, shows up as staged.
+    """
+    repo, env, _ = scratch
+    shutil.copy2(REPO_ROOT / ".gitignore", repo / ".gitignore")
+    _git(repo, "init", "-q")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "scratch")
+
+    result = _run(repo, env)
+    assert result.returncode == 0, result.stderr + result.stdout
+
+    captures, transcripts = _snapshots(repo)
+    assert len(captures) == 1 and len(transcripts) == 1, "the capture wrote no pair to check"
+    written = sorted(p for p in (repo / "demo/replay/raw").iterdir())
+    rels = [str(p.relative_to(repo)) for p in written]
+    for pair_file in (captures[0], transcripts[0]):
+        assert str(pair_file.relative_to(repo)) in rels
+
+    ignored = _git(repo, "check-ignore", "--no-index", *rels).splitlines()
+    assert sorted(ignored) == sorted(rels), (
+        f"capture files not ignored by .gitignore: {sorted(set(rels) - set(ignored))}"
+    )
+
+    _git(repo, "add", "-A")
+    staged = _git(repo, "diff", "--cached", "--name-only").splitlines()
+    assert staged == [], f"a capture left files `git add -A` would commit: {staged}"
+
+
+def test_this_repo_tracks_nothing_under_demo_replay_raw():
+    """No capture or transcript was ever committed: real ones carry account ids and prompt text."""
+    tracked = _git(REPO_ROOT, "ls-files", "--", "demo/replay/raw").splitlines()
+    assert tracked == [], f"files under demo/replay/raw are committed: {tracked}"
+    probe = "demo/replay/raw/session-20260101-000000.transcript.jsonl"
+    assert _git(REPO_ROOT, "check-ignore", "--no-index", probe).strip() == probe, (
+        "this repo's .gitignore no longer ignores demo/replay/raw/"
+    )
+
+
 def test_run_session_without_a_pinned_id_passes_no_session_flag(scratch):
     repo, env, argv_file = scratch
     stub = repo.parent / "bin" / "claude"
