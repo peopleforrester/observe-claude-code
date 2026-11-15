@@ -128,3 +128,53 @@ lock bump can pass the gates. #32 itself can close through a run that commits no
 every criterion met, which ends before the read. A run on #32 that commits anything still fails at
 the read until the App has the permission. The fix for the dispatcher is tracked on
 peopleforrester/hecaton, filed from #34.
+
+## 2026-11-15 · question 1732: the Collector runs as the checkout owner for a capture (#24)
+
+**Question 1732:** a run on #24 asked for one command to run as Michael on netcup in the canonical
+checkout, `~/repos/talks/Value_with_Agents_Observability_in_action`: fast-forward to staging, bring
+the stack up, run `demo/replay/capture-session.sh` and check the real `claude_code.tool` spans. The
+answer, word for word:
+
+> Back to the run (hecaton#510): `ssh netcup set pipefail export compose` was refused by a rule hecaton has decided (hecaton#538), so asking again changes nothing. What to do instead: the custodian tier did not run it: "step 1: precondition: the Collector's capture sink demo/replay/raw/ is not writable by the Collector. Container uid 10001; the directory is michael:michael 775. So no OTLP is ever captured, and capture-session.sh exits at 'no OTLP captured' before the join. This exact command already ran 9 times on 2026-11-15 (reflog and 9 session logs/transcripts) with no snapshot produced. To do instead: make the sink writable in the repo, then re-escalate the same command pinned to the new staging tip. For example, give the collector service `user: "${OCC_UID:-1000}:${OCC_GID:-1000}"` in compose/docker-compose.yml, or have capture-session.sh create raw/otlp-capture.jsonl writable for the container before restarting the Collector. Separately, the 9 session logs show the scripted session's stop hook running `pytest -m "not e2e"`, which pulls in the integration tests. They also show test_capture_session.py::test_run_session_without_a_pinned_id_passes_no_session_flag failing because OCC_SESSION_ID leaks from the parent environment into its fixture. That makes the 'short' session long (~800 KB transcripts).". The tier found that something the act needs does not hold yet, named above, so it did not run it, and no tier above would. Do not escalate the act again until that holds. If your own work can make it hold (a commit or a fix on your branch, which the dispatcher merges into staging after your run), do that first and put the act in `escalate` in that same report. If it waits on something no run makes happen, such as the dispatcher promoting staging to main, another issue closing or a day, end with a `wait` on it (kind `issue` or `date`, else `recheck`); once it holds, read it back and put the same act in `escalate` with that evidence in its why.
+
+Who decided it, word for word:
+
+> Decided by the coordinator under Michael's standing rules, not by Michael.
+
+**Decision:** the first of the two shapes the answer offered, with the image's own user as the
+default. The Collector service reads `user: "${OCC_UID:-10001}:${OCC_GID:-10001}"`.
+`capture-session.sh` exports `OCC_UID` and `OCC_GID` as the ids of the user running it and
+recreates the Collector (`up -d --no-deps --force-recreate collector`) in place of the old
+`restart`, so the file exporter writes `demo/replay/raw/otlp-capture.jsonl` as the checkout's
+owner. `make up` passes the remote user's ids the same way.
+
+**Why not default to 1000:** the owner's uid is a fact of each host, not of the repo; a default of
+1000 is only right where the owner happens to be 1000. Keeping the image's 10001 when the variables
+are unset leaves every other way the stack is started exactly as it was, and the two places that
+need the sink writable set the ids from `id -u` and `id -g`.
+
+**Why not a pre-created world-writable capture file:** the capture holds account identifiers and
+prompt text, and a file the container can open as "other" is one every local user can open. Run as
+the owner, the exporter creates it mode 0600.
+
+**Why recreate instead of restart:** `docker compose restart` keeps the container's old user, so
+it would leave a Collector started without the variables unable to write.
+
+**The Stop hook:** the scripted session in `demo/run-session.sh` now runs with
+`--setting-sources project,local`, so a user-level Stop hook (the `pytest -m "not e2e"` run in the
+9 logs) no longer runs inside it. It loads the repo's own settings, which hold the deploy deny hook.
+Once the Collector writes, that hook's integration tests would replay the committed sample into the
+live Collector mid-capture, and join.py would then refuse the capture because the sample's
+`session.id` is not the transcript's. The session's stdin is also closed, which removes the
+3-second wait the logs show.
+
+**The leaked `OCC_SESSION_ID`:** the `scratch` fixture in `tests/test_capture_session.py` no longer
+passes `OCC_SESSION_ID`, `OCC_UID` or `OCC_GID` from the caller's environment to the scripts.
+
+**What follows:** the act goes back into `escalate` in the same report, as the answer directs. The
+staging tip after this run's merge is not known to the run, so instead of a SHA pin the command
+fast-forwards to `origin/staging` and stops unless staging holds f1462b1 and all three fixes above.
+It also takes the integration stack lock from #25 for the capture, so no other integration run on
+netcup replays its sample into the live Collector mid-capture, and it takes the stack down only if
+it started it.

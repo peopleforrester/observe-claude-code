@@ -71,14 +71,21 @@ def scratch(tmp_path):
 
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
-    _stub(bin_dir, "docker", "#!/bin/sh\nexit 0\n")
+    # Logs each call with the Collector user it was given, so a test can read what was recreated.
+    _stub(bin_dir, "docker",
+          '#!/bin/sh\necho "OCC_UID=${OCC_UID:-} OCC_GID=${OCC_GID:-} $*" >>"$FAKE_DOCKER_LOG"\n')
     _stub(bin_dir, "sleep", "#!/bin/sh\nexit 0\n")
     _stub(bin_dir, "claude", f"#!{sys.executable}\n{FAKE_CLAUDE}")
     (bin_dir / "python3").symlink_to(sys.executable)
 
     config = tmp_path / "claude-config"
+    # The scripted session exports OCC_SESSION_ID, and a test run inside one (a Stop hook) must
+    # not hand it to run-session.sh, nor a caller's Collector user to capture-session.sh.
+    inherited = {k: v for k, v in os.environ.items()
+                 if k not in {"OCC_SESSION_ID", "OCC_UID", "OCC_GID"}}
     env = {
-        **os.environ,
+        **inherited,
+        "FAKE_DOCKER_LOG": str(tmp_path / "docker.log"),
         "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
         "CLAUDE_CONFIG_DIR": str(config),
         "FAKE_CLAUDE_ARGV": str(tmp_path / "claude-argv.json"),
@@ -129,6 +136,39 @@ def test_run_session_keeps_its_flags_and_adds_the_pinned_session_id(scratch):
     assert "--strict-mcp-config" in argv and "--allowedTools" in argv
     sid = argv[argv.index("--session-id") + 1]
     assert len(sid) == 36 and sid.count("-") == 4, f"not a UUID: {sid}"
+
+
+def test_capture_recreates_the_collector_as_the_checkout_owner(scratch):
+    """The Collector writes into this checkout's demo/replay/raw, so it must run as its owner.
+
+    The image's own user (10001) cannot write a directory the checkout owner owns, and a restart
+    would keep that user, so no OTLP was ever captured on netcup (#24).
+    """
+    repo, env, _ = scratch
+    assert _run(repo, env).returncode == 0
+    calls = (repo.parent / "docker.log").read_text().splitlines()
+    recreate = [c for c in calls if " up " in f" {c} " and "collector" in c.split()]
+    assert recreate, f"the Collector was not recreated: {calls}"
+    assert recreate[0].startswith(f"OCC_UID={os.getuid()} OCC_GID={os.getgid()} "), recreate[0]
+    assert "--force-recreate" in recreate[0].split(), "a plain `up` keeps a running container"
+    assert not any(" restart " in f" {c} " for c in calls), "a restart keeps the old user"
+
+
+def test_run_session_keeps_user_settings_out_and_closes_stdin(scratch):
+    """A user-level Stop hook must not run inside the scripted session; stdin is closed."""
+    repo, env, argv_file = scratch
+    stub = repo.parent / "bin" / "claude"
+    stub.write_text(f"#!{sys.executable}\nimport json, os, sys\n"
+                    "open(os.environ['FAKE_CLAUDE_ARGV'], 'w').write(json.dumps(\n"
+                    "    {'argv': sys.argv[1:], 'stdin': sys.stdin.read()}))\n")
+    result = subprocess.run(["bash", str(repo / "demo/run-session.sh")],
+                            env=env, input="piped text", capture_output=True, text=True,
+                            timeout=60)
+    assert result.returncode == 0, result.stderr
+    seen = json.loads(argv_file.read_text())
+    argv = seen["argv"]
+    assert argv[argv.index("--setting-sources") + 1] == "project,local"
+    assert seen["stdin"] == "", "claude -p should get no stdin"
 
 
 def test_capture_fails_loudly_when_no_transcript_was_written(scratch):

@@ -103,6 +103,10 @@ services:
     container_name: occ-collector
     restart: unless-stopped
     command: ["--config=/etc/otelcol/config.yaml"]
+    # The capture sink is a bind mount of the checkout's demo/replay/raw, so the Collector must
+    # run as a user that can write there. capture-session.sh sets OCC_UID/OCC_GID to the
+    # checkout owner's ids; unset, the image's own user (10001) is kept.
+    user: "${OCC_UID:-10001}:${OCC_GID:-10001}"
     volumes:
       - ./collector/config.yaml:/etc/otelcol/config.yaml:ro
       - ./demo/replay/raw:/replay        # capture sink for offline replay

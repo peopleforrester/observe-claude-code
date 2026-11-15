@@ -72,3 +72,22 @@ def test_each_host_port_reads_its_override():
     overrides = {var: 20000 + i for i, var in enumerate(HOST_PORTS.values())}
     published = _published_ports({**os.environ, **{k: str(v) for k, v in overrides.items()}})
     assert published == {key: overrides[var] for key, var in HOST_PORTS.items()}
+
+
+def _collector_user(env):
+    result = subprocess.run(
+        [*COMPOSE_BASE, "config", "--format", "json"],
+        cwd=REPO_ROOT, env=env, capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    return json.loads(result.stdout)["services"]["collector"].get("user")
+
+
+def test_collector_user_defaults_to_the_image_user():
+    env = {k: v for k, v in os.environ.items() if k not in {"OCC_UID", "OCC_GID"}}
+    assert _collector_user(env) == "10001:10001"
+
+
+def test_collector_user_reads_occ_uid_and_gid():
+    """capture-session.sh runs the Collector as the checkout owner, so it can write the sink (#24)."""
+    assert _collector_user({**os.environ, "OCC_UID": "1234", "OCC_GID": "5678"}) == "1234:5678"

@@ -14,8 +14,11 @@ dependence on conference wifi.
 demo/replay/capture-session.sh
 ```
 
-This clears the capture, runs the scripted session (the denied-deploy security moment included)
-under a pinned session ID, and snapshots a pair:
+This clears the capture and recreates the Collector as the user running the script. The Collector
+writes the capture through a bind mount of this checkout's `demo/replay/raw`, which the image's own
+user (10001) cannot write; `OCC_UID` and `OCC_GID` set the Collector's user in
+`compose/docker-compose.yml`. It then runs the scripted session (the denied-deploy security moment
+included) under a pinned session ID, and snapshots a pair:
 
 - `demo/replay/raw/session-<timestamp>.jsonl`: the OTLP the Collector captured.
 - `demo/replay/raw/session-<timestamp>.transcript.jsonl`: that session's Claude Code transcript,

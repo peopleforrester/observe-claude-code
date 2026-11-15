@@ -5,7 +5,9 @@ ABOUTME: Produces productivity, cost, and security signals — including a denie
 
 The session is run headless and non-interactively so the telemetry is deterministic.
 `demo/run-session.sh` sources `env/claude-code.env`, then runs the agent with the prod-api
-MCP server registered and a policy that denies the deploy tool.
+MCP server registered and a policy that denies the deploy tool. It loads only the project and
+local settings (`--setting-sources project,local`), so a presenter's user-level hooks (a Stop hook
+that runs tests, say) never run inside the scripted session.
 
 ## What the session does
 

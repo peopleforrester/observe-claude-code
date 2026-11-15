@@ -18,10 +18,14 @@ SESSION_ID="$(python3 -c 'import uuid; print(uuid.uuid4())')"
 
 command -v docker >/dev/null 2>&1 || { echo "docker not available in this shell" >&2; exit 1; }
 
-echo "==> Clearing the capture file and restarting the Collector for a clean capture..."
+echo "==> Clearing the capture file and recreating the Collector for a clean capture..."
 mkdir -p "$(dirname "${RAW}")"
 rm -f "${RAW}"
-${COMPOSE} restart collector >/dev/null
+# The Collector writes the capture into this checkout's demo/replay/raw through a bind mount, so it
+# runs as this user: the image's own user (10001) cannot write a directory the checkout owner
+# owns. A restart keeps the container's old user, so the Collector is recreated instead.
+export OCC_UID="$(id -u)" OCC_GID="$(id -g)"
+${COMPOSE} up -d --no-deps --force-recreate collector >/dev/null
 sleep 5
 
 echo "==> Running the scripted session ${SESSION_ID} (deploy will be denied)..."

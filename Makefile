@@ -14,8 +14,9 @@ sync:
 	  --exclude '**/data' --exclude '*.pyc' \
 	  ./ $(VPS):$(REMOTE_DIR)/
 
+# The Collector runs as the remote user so it can write the capture into the checkout (#24).
 up: sync
-	$(REMOTE) $(COMPOSE) up -d'
+	$(REMOTE) OCC_UID=$$(id -u) OCC_GID=$$(id -g) $(COMPOSE) up -d'
 
 down:
 	$(REMOTE) $(COMPOSE) down'

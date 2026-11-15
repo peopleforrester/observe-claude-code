@@ -33,7 +33,13 @@ if [[ -n "${OCC_SESSION_ID:-}" ]]; then
   SESSION_ARGS=(--session-id "${OCC_SESSION_ID}")
 fi
 
+# --setting-sources project,local keeps the presenter's user settings out of the scripted session:
+# a user-level Stop hook (a pytest run, say) would make the session long and could send the
+# replayed sample into the Collector mid-capture. The repo's own deny hook still loads.
+# stdin is closed so `claude -p` does not wait 3 seconds for piped input.
 claude -p "${PROMPT}" "${SESSION_ARGS[@]}" \
+  --setting-sources project,local \
   --permission-mode acceptEdits \
   --mcp-config .mcp.json --strict-mcp-config \
-  --allowedTools "mcp__prod-api__get_status,mcp__prod-api__deploy,Read,Edit,Write,Bash"
+  --allowedTools "mcp__prod-api__get_status,mcp__prod-api__deploy,Read,Edit,Write,Bash" \
+  </dev/null
