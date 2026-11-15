@@ -31,6 +31,12 @@ script stops there and prints the end of that log.
 It ends by running the join below over the pair and fails loudly if no transcript was written or if
 the OTLP and the transcript come from different sessions.
 
+`tests/test_real_capture.py` (run with `uv run pytest -m integration`) checks the newest pair, or
+the capture `OCC_CAPTURE` names. Every real `claude_code.tool` span must carry `tool_use_id` as a
+span attribute and `session.id` on the span or its resource, which is where `join.py` reads them,
+and every one must join to the transcript. With no capture, the test fails and says to run this
+script first.
+
 ## Replay it offline
 
 ```bash
