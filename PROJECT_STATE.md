@@ -94,6 +94,12 @@ Grafana 12.4.x (latest is 13.0.2) · OTel semconv v1.42.0 · OTel Weaver v0.23.0
       demo/replay/replay.py shifts timestamps to "now" and re-emits so dashboards move offline.
       capture-session.sh snapshots a real run (gitignored — PII); committed sample is synthetic with
       a PII guard test. 40 tests green. Screen-capture floor still to record (stage-day task).
+      Trace-to-prompt join confirmed on real telemetry (#24, 2026-11-16): a capture-session.sh run
+      in the canonical netcup checkout (staging 8851dfd) produced 6
+      claude_code.tool spans (Read, ToolSearch, Edit, Bash, get_status, hook-denied deploy), each
+      with tool_use_id and session.id as span attributes (none on the resource), and join.py joins
+      all 6 to the scripted prompt with --require-tool mcp__prod-api__deploy. The pair stays in
+      the gitignored demo/replay/raw/.
 - [ ] Phase 7 (FINAL) — Datadog backend + parity + rehearsal — OWNER: Nick, parked until ~July 2026
 
 ## Build host + dev loop
