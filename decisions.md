@@ -95,3 +95,36 @@ runs, so rebinding them before the first test reaches every test without changin
 **Why the probe uses `SO_REUSEADDR`, bind and listen on `0.0.0.0`:** that is what the Compose port
 forwarder (rootlessport or docker-proxy, both Go listeners that set `SO_REUSEADDR`) does, so the
 probe agrees with it: a port left in `TIME_WAIT` by an earlier stack is free to both.
+
+## 2026-11-15 · #32's runs fail at the dispatcher's alert read, and question 1578 waits on Chrome (#34)
+
+**Decision:** nothing in this repo changes for the failure. The lock bump #32 asks for lands
+through a child of #32 that carries no `dependabot-fix`, and the browser read question 1578 asked
+for is not escalated again from this repo until Michael's Chrome with remote debugging (CDP on
+127.0.0.1:9222) runs on tanjiro-wsl2.
+
+**The cause:** runs 26138, 26148 and 26257 on #32 each committed a correct `uv.lock` bump, then
+ended executor-error with HTTP 403 (`HTTPError: HTTP Error 403: Forbidden`) before any gate ran.
+Because #32 carries `dependabot-fix`, the dispatcher reads each listed alert (GET
+/repos/peopleforrester/observe-claude-code/dependabot/alerts/N) with the hecatongithub App token,
+which has no Dependabot alerts permission, so GitHub refuses the read and the refusal ends the run.
+Michael's own token reads the same 19 alerts: all open, none dismissed. No change in this repo
+fixes it. Michael granting Dependabot alerts: Read-only on the App and accepting it on the
+peopleforrester installation does, because the dispatcher mints its token with the installation's
+whole reach. peopleforrester/hecaton#768 asks for the same App change for the heavy gate's token.
+
+**Question 1578:** a run on #32 asked for a browser read of
+https://github.com/settings/apps/hecatongithub/permissions, to confirm whether the hecatongithub
+App's Dependabot alerts permission reads No access. The answer, word for word:
+
+> Back to the run (hecaton#510): `browser read github.com` was refused by a rule hecaton has decided (hecaton#538), so asking again changes nothing. What to do instead: the elevated tier did not run it: "step 1: precondition: Michael's Chrome with remote debugging (CDP on 127.0.0.1:9222) is not running on tanjiro-wsl2. The wrapper's browser read fails with 'fetch failed', and a curl to :9222/json/version there is refused (exit 7). Re-run this read once that Chrome is up again. Until then the hecaton follow-up can go ahead without it: add 'Dependabot alerts: Read-only' to the hecatongithub App and accept the change on the peopleforrester installation. The 403 from GET /repos/.../dependabot/alerts/N with the App token is already strong evidence that the permission is missing.". The tier found that something the act needs does not hold yet, named above, so it did not run it, and no tier above would. Do not escalate the act again until that holds. If your own work can make it hold (a commit or a fix on your branch, which the dispatcher merges into staging after your run), do that first and put the act in `escalate` in that same report. If it waits on something no run makes happen, such as the dispatcher promoting staging to main, another issue closing or a day, end with a `wait` on it (kind `issue` or `date`, else `recheck`); once it holds, read it back and put the same act in `escalate` with that evidence in its why.
+
+Who decided it, word for word:
+
+> Decided by the coordinator under Michael's standing rules, not by Michael.
+
+**What follows for #32:** a child of #32 with no `dependabot-fix` makes no App-token read, so its
+lock bump can pass the gates. #32 itself can close through a run that commits nothing and finds
+every criterion met, which ends before the read. A run on #32 that commits anything still fails at
+the read until the App has the permission. The fix for the dispatcher is tracked on
+peopleforrester/hecaton, filed from #34.
