@@ -278,3 +278,30 @@ missing bind-mount source fails under podman and is created root-owned under roo
 **Why POST for the Loki probe:** Loki answers a GET on its POST-only `/otlp/v1/logs` with 405 or
 404, depending on the route order it picks at startup; about one cold start in three gave 404. An
 empty POST always reaches the handler, which answers 422.
+
+## 2026-11-23 · question 2713: the canonical-checkout tests move to a `netcup` marker (#15)
+
+**Question 2713:** should the two tests that run a real capture in Michael's netcup checkout move
+out of the heavy gate's integration suite into a separate marker that is run on netcup?
+
+**Answer:** Move them to a netcup marker.
+
+**Who decided it, word for word:** Decided by hecaton's research under Michael's standing rules,
+not by Michael.
+
+**What it changes:** this overrides the #37 entry's choice to mark `tests/test_canonical_checkout.py`
+`integration`. Its two tests are now marked `netcup`, which `tests/conftest.py` registers in
+`pytest_configure`; the pytest settings in `pyproject.toml` are unchanged. A run whose `-m`
+expression does not name `netcup` deselects them, so neither the heavy gate's `uv run pytest -m
+integration` nor the offline `uv run pytest -m "not integration"` picks them up. They run with
+`uv run pytest -m netcup`, on netcup as the canonical checkout's owner, and still fail loudly
+anywhere else. A `netcup` run takes the #25 host lock, so no integration run replays into the
+live Collector mid-capture, but it does not start this checkout's stack: it drives the canonical
+checkout's own.
+
+**Why:** the heavy gate runs on a hecaton lane with rootless podman, which has neither Michael's
+checkout nor his Claude login, so the two tests kept the gate red even after the suite learned to
+start its own stack, and `main` could not follow `staging`. Leaving them out of the gate also stops
+each gate run from making a paid Claude session and recreating the demo's live Collector. The cost
+is that the #24 capture check is no longer enforced on promotion; it is one documented command on
+netcup.

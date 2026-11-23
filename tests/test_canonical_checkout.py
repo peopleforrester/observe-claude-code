@@ -8,7 +8,9 @@ import pytest
 
 from conftest import COMPOSE_BASE, MOVED_HOST_PORTS
 
-pytestmark = pytest.mark.integration
+# Run with `uv run pytest -m netcup` on netcup as the checkout's owner; the heavy gate's
+# `-m integration` run on a lane cannot reach this checkout (question 2713).
+pytestmark = pytest.mark.netcup
 
 # The checkout the talk is demoed from. OCC_CANONICAL_CHECKOUT points elsewhere for another host.
 CANONICAL_CHECKOUT = Path(os.environ.get(

@@ -39,7 +39,9 @@ Contrib 0.154.0 · Prometheus 3.12.0 · Loki 3.7.2 · Jaeger 2.19.0 · Grafana 1
 - **Test:** `uv run pytest -m "not integration"` (offline unit tests; no stack needed). Integration
   smoke suite: `uv run pytest -m integration` (needs a working `docker compose`; it brings the
   Compose stack up with `up -d --wait`, reuses one that is already running, and takes down only a
-  stack it started). Plain `uv run pytest` runs both.
+  stack it started). Plain `uv run pytest` runs both. The real capture in the canonical
+  checkout (`tests/test_canonical_checkout.py`) runs only under `uv run pytest -m netcup`, on
+  netcup as the checkout's owner; no other run selects it.
 - **Bring stack up:** `make up` (runs via `ssh netcup 'make -C ~/observe-claude-code up'`)
 - **Bring stack down:** `make down`
 - **Run scripted demo session:** `bash demo/run-session.sh`

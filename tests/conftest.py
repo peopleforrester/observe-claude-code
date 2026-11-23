@@ -293,15 +293,20 @@ def _integration_host_lock(request):
     """Serialise integration runs on this host for the whole session.
 
     Session-scoped and autouse, so it is set up before any other session fixture an
-    integration test uses (the stack itself) and torn down after them. Inside the lock, a
+    integration test uses (the stack itself) and torn down after them. A `netcup` run takes
+    the lock too, so nothing replays into the live Collector mid-capture. Inside the lock, a
     run that will start its own stack first moves any taken default host port to a free one
     and sets the Collector's user; a stack that already exists (the demo box) is reused as it
     runs. Yields whether this run starts the stack, or None when no integration test runs.
     """
-    if not any(item.get_closest_marker("integration") for item in request.session.items):
+    items = request.session.items
+    if not any(item.get_closest_marker(m) for item in items for m in STACK_MARKERS):
         yield None
         return
     with host_lock(STACK_LOCK_PATH, timeout=STACK_LOCK_TIMEOUT):
+        if not any(item.get_closest_marker("integration") for item in items):
+            yield None  # netcup tests drive the canonical checkout's stack, not this one
+            return
         started_here = not _stack_exists()
         if started_here:
             _publish_on_free_ports({item.module for item in request.session.items})
@@ -323,6 +328,34 @@ def _integration_needs_stack(request):
     """Every `integration`-marked test runs against the live stack (#15)."""
     if request.node.get_closest_marker("integration"):
         request.getfixturevalue("compose_stack")
+
+
+# Markers whose tests hold the host lock: both drive a live Compose stack on this host.
+STACK_MARKERS = ("integration", "netcup")
+
+
+def pytest_configure(config):
+    """Register the `netcup` marker here; the pytest settings in pyproject.toml stay as they are."""
+    config.addinivalue_line(
+        "markers",
+        "netcup: needs Michael's canonical checkout and live stack on netcup; runs only under "
+        "`uv run pytest -m netcup`, as the checkout's owner (question 2713)",
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    """Leave `netcup` tests out of every run whose -m expression does not name them.
+
+    They make a real Claude session and recreate the demo's live Collector, so neither the
+    offline `-m "not integration"` run nor the heavy gate's `-m integration` run may pick them
+    up; `uv run pytest -m netcup` on netcup runs them (question 2713).
+    """
+    if "netcup" in (config.getoption("markexpr") or ""):
+        return
+    netcup = [item for item in items if item.get_closest_marker("netcup")]
+    if netcup:
+        config.hook.pytest_deselected(items=netcup)
+        items[:] = [item for item in items if not item.get_closest_marker("netcup")]
 
 
 def pytest_terminal_summary(terminalreporter):
