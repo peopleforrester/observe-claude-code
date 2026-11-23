@@ -16,8 +16,9 @@ def test_loki_is_ready(http):
 
 def test_loki_otlp_endpoint_is_mounted(http):
     wait_until(lambda: http.get(f"{LOKI_URL}/ready").status_code == 200, what="Loki ready")
-    # POST-only endpoint; a GET must not 404 if the OTLP logs path is mounted.
-    r = http.get(f"{LOKI_URL}/otlp/v1/logs")
+    # Probe with a POST: a GET on this POST-only path answers 405 or 404 depending on the
+    # route order Loki picked at startup. An empty batch reaches the handler (422), never 404.
+    r = http.post(f"{LOKI_URL}/otlp/v1/logs", json={"resourceLogs": []})
     assert r.status_code != 404, f"Loki OTLP logs endpoint not mounted (got {r.status_code})"
 
 

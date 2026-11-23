@@ -246,3 +246,35 @@ running user's `~/repos`) or lies in no git checkout. With no tree there, it fai
 **Why the checkout check and not plain existence:** the old Toronto path still exists, because it
 is now the talk folder that holds the repo. So the issue's own `[ -e "$p" ]` loop passes on the
 stale path. A path is only right if a git checkout holds it.
+## 2026-11-23 · The integration suite brings its own Compose stack up (#15)
+
+**Decision:** the design approved for #15 on 2026-11-01 (drafts `agent/15-14925` and
+`agent/15-15412`), reapplied on current staging. Every `integration`-marked test pulls in the
+session fixture `compose_stack` in `tests/conftest.py`, which runs `docker compose up -d --wait`
+inside the #25 host lock. A stack already running (the demo box) is reused and left running. A
+stack the run started is taken down afterwards, and also when `up` fails or times out. The Loki
+OTLP probe POSTs an empty batch where it used to send a GET. `pyproject.toml` is left as it is.
+
+**Why the suite starts the stack:** the heavy gate runs `uv run pytest -m integration` on a fresh
+tree with nothing running, so every probe waited out its 90-second timeout (22 minutes, 23
+failures). Starting the stack in the suite makes that command complete on its own, and a missing or
+broken `docker` fails at once with the `docker compose` error.
+
+**Why tear down after a failed `up`:** a half-started stack keeps its published host ports after
+the run releases the lock and breaks the next run on the host, which could be another user's or the
+gate's.
+
+**The Collector's user, reconciled with #24:** the approved draft ran the Collector as container
+root. Since then #24 made its user `${OCC_UID:-10001}:${OCC_GID:-10001}`, so this change keeps that
+line and sets the variables instead, only for a stack the run starts and only when the caller has
+not set either. On a rootless engine (`docker info` lists `name=rootless`, as rootless podman on the
+gate host does) they are `0:0`, because container root maps back to the user running the engine
+while uid 10001 maps to a subordinate uid that cannot write the user's `demo/replay/raw`; with no
+subordinate ids at all, uid 10001 cannot start. On a rootful engine they are the running user's own
+ids, as `make up` and `capture-session.sh` already pass, so the capture is the user's and not root's.
+The fixture also creates `demo/replay/raw`: it is gitignored, so a fresh checkout lacks it, and a
+missing bind-mount source fails under podman and is created root-owned under rootful Docker.
+
+**Why POST for the Loki probe:** Loki answers a GET on its POST-only `/otlp/v1/logs` with 405 or
+404, depending on the route order it picks at startup; about one cold start in three gave 404. An
+empty POST always reaches the handler, which answers 422.

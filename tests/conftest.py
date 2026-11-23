@@ -1,5 +1,5 @@
 # ABOUTME: Shared pytest fixtures and a polling helper for the live-stack integration tests.
-# ABOUTME: Tests run on the VPS and probe each service on localhost.
+# ABOUTME: Integration tests bring the Compose stack up themselves and probe it on localhost.
 import contextlib
 import errno
 import fcntl
@@ -206,12 +206,63 @@ def _free_port_moves(env):
     return moves
 
 
+def _compose(*args, timeout=120):
+    """Run `docker compose` on this checkout's stack."""
+    return subprocess.run([*COMPOSE_BASE, *args], cwd=REPO_ROOT,
+                          capture_output=True, text=True, timeout=timeout)
+
+
 def _stack_exists():
     """Whether any container of this Compose project exists on the host, running or not."""
-    ps = subprocess.run([*COMPOSE_BASE, "ps", "-a", "-q"], cwd=REPO_ROOT,
-                        capture_output=True, text=True, timeout=120)
+    ps = _compose("ps", "-a", "-q")
     assert ps.returncode == 0, f"`docker compose ps` failed:\n{ps.stderr}"
     return bool(ps.stdout.strip())
+
+
+# Ceiling for `up --wait`: image pulls on a cold host plus the health-gated start order.
+COMPOSE_UP_TIMEOUT = 600
+# The Collector's bind-mounted capture sink. It is gitignored, so a fresh checkout lacks it.
+CAPTURE_DIR = REPO_ROOT / "demo" / "replay" / "raw"
+
+
+@contextlib.contextmanager
+def compose_up(*, started_here, compose=_compose):
+    """Bring the Compose stack up for the block; take it down after only if this run started it.
+
+    `up -d --wait` is idempotent, so a stack that is already running (the demo box) is reused
+    and left running afterwards. A stack started here is taken down even when `up` fails or
+    times out: a half-started stack would keep holding its host ports after the run.
+    """
+    try:
+        up = compose("up", "-d", "--wait", timeout=COMPOSE_UP_TIMEOUT)
+        assert up.returncode == 0, f"`docker compose up -d --wait` failed:\n{up.stderr}"
+        yield
+    finally:
+        if started_here:
+            compose("down")
+
+
+def _engine_is_rootless():
+    """Whether `docker` talks to a rootless engine (rootless podman or rootless Docker)."""
+    info = subprocess.run(["docker", "info", "--format", "{{json .SecurityOptions}}"],
+                          capture_output=True, text=True, timeout=120)
+    assert info.returncode == 0, f"`docker info` failed:\n{info.stderr}"
+    return "name=rootless" in info.stdout
+
+
+def _collector_ids(env, *, rootless, uid, gid):
+    """The OCC_UID/OCC_GID to export so the Collector of a stack started here can write the capture.
+
+    The Collector writes demo/replay/raw as the container user (#24). A rootless engine maps
+    container root to the user running it, and the image's uid 10001 to a subordinate uid that
+    cannot write the user's directory; a rootful engine maps ids one to one. Ids the caller set
+    are used as set.
+    """
+    if "OCC_UID" in env or "OCC_GID" in env:
+        return {}
+    if rootless:
+        return {"OCC_UID": "0", "OCC_GID": "0"}
+    return {"OCC_UID": str(uid), "OCC_GID": str(gid)}
 
 
 # The ports this run moved off their defaults, for the terminal summary.
@@ -243,16 +294,35 @@ def _integration_host_lock(request):
 
     Session-scoped and autouse, so it is set up before any other session fixture an
     integration test uses (the stack itself) and torn down after them. Inside the lock, a
-    run that will start its own stack first moves any taken default host port to a free one;
-    a stack that already exists (the demo box) is reused on the ports it publishes.
+    run that will start its own stack first moves any taken default host port to a free one
+    and sets the Collector's user; a stack that already exists (the demo box) is reused as it
+    runs. Yields whether this run starts the stack, or None when no integration test runs.
     """
     if not any(item.get_closest_marker("integration") for item in request.session.items):
-        yield
+        yield None
         return
     with host_lock(STACK_LOCK_PATH, timeout=STACK_LOCK_TIMEOUT):
-        if not _stack_exists():
+        started_here = not _stack_exists()
+        if started_here:
             _publish_on_free_ports({item.module for item in request.session.items})
+            os.environ.update(_collector_ids(os.environ, rootless=_engine_is_rootless(),
+                                             uid=os.getuid(), gid=os.getgid()))
+            CAPTURE_DIR.mkdir(parents=True, exist_ok=True)
+        yield started_here
+
+
+@pytest.fixture(scope="session")
+def compose_stack(_integration_host_lock):
+    """Bring the Compose stack up for the integration suite; tear down only what it started."""
+    with compose_up(started_here=_integration_host_lock):
         yield
+
+
+@pytest.fixture(autouse=True)
+def _integration_needs_stack(request):
+    """Every `integration`-marked test runs against the live stack (#15)."""
+    if request.node.get_closest_marker("integration"):
+        request.getfixturevalue("compose_stack")
 
 
 def pytest_terminal_summary(terminalreporter):
