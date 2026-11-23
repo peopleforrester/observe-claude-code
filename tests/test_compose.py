@@ -4,7 +4,13 @@ import json
 import os
 import subprocess
 
+import pytest
+
 from conftest import REPO_ROOT
+
+# `docker compose config` needs the Compose plugin, which an offline host may lack, so these
+# run in the integration suite with the rest of the Docker-backed tests (#15).
+pytestmark = pytest.mark.integration
 
 COMPOSE_BASE = [
     "docker", "compose",

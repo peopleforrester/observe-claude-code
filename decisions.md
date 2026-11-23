@@ -305,3 +305,18 @@ start its own stack, and `main` could not follow `staging`. Leaving them out of 
 each gate run from making a paid Claude session and recreating the demo's live Collector. The cost
 is that the #24 capture check is no longer enforced on promotion; it is one documented command on
 netcup.
+
+## 2026-11-23 · The `docker compose config` tests join the integration suite (#15)
+
+**Decision:** the six tests in `tests/test_compose.py` and `test_grafana_start_order_is_health_gated`
+in `tests/test_hardening.py` are marked `integration`. Each runs `docker compose config`, so each
+needs Docker's Compose plugin.
+
+**Why:** the offline command `uv run pytest -m "not integration"` may only hold tests that pass
+everywhere. A hecaton lane has a `docker` client with no Compose plugin, so all seven failed there
+with exit 125 ("'compose' is not a docker command"). They failed on staging before #15 changed
+anything. Validation had not run them, because it runs only the tests that read a changed file. The
+#15 change to `tests/conftest.py` made it run the whole offline suite, which exposed them. The
+heavy gate's `-m integration` run has Compose, since it brings the stack up, so they still gate
+promotion. They strip `OCC_UID`, `OCC_GID` and the `OCC_*_PORT` variables before rendering, so
+the values a run exports for a stack of its own do not change what they check.

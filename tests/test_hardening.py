@@ -28,6 +28,7 @@ def _inspect(container, fmt):
     return r.stdout.strip() if r.returncode == 0 else None
 
 
+@pytest.mark.integration  # reads `docker compose config`, which needs the Compose plugin
 def test_grafana_start_order_is_health_gated():
     deps = _compose_services()["grafana"]["depends_on"]
     assert deps["prometheus"]["condition"] == "service_healthy"
