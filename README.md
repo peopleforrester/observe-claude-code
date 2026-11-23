@@ -22,7 +22,7 @@ The demo stands on its own.
 | Status | The open CNCF demo is built and tested; the Datadog integration is pending (see [Status](#status)) |
 | Built from | This repo is the source: the demo, Collector config, dashboards and tests are written here |
 | Registered in | `talks/talks-knowledge`: `talks/register.md` row 8 (the register entry) and the abstracts, including `abstracts/recovered/what-does-a-good-agent-look-like.md` |
-| Sibling | [`peopleforrester/reading-agent-mcp-calls-through-otel`](https://github.com/peopleforrester/reading-agent-mcp-calls-through-otel): the Toronto standby version of this talk, a 25-minute deck angled on MCP calls, built from this repo |
+| Sibling | [`peopleforrester/reading-agent-mcp-calls-through-otel-talk`](https://github.com/peopleforrester/reading-agent-mcp-calls-through-otel-talk): the Toronto standby version of this talk, a 25-minute deck angled on MCP calls, built from this repo |
 
 The demo answers three questions on screen, not in narration:
 

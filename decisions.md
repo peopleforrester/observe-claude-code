@@ -221,3 +221,28 @@ a real run is joined, so the check lives there. `tests/test_capture_session.py` 
 with a fake `claude` shaped like a scripted run (Edit, Bash, get_status, then the deploy the hook
 denies) and fails if the check is dropped, if the deploy span goes missing, or if it joins to
 another prompt.
+
+## 2026-11-23 · The ~/repos restructure recheck: one stale sibling path, now tested (#4)
+
+**Decision:** AGENTS.md, README.md and PROJECT_STATE.md now name the Toronto standby repo as
+`peopleforrester/reading-agent-mcp-calls-through-otel-talk` at
+`~/repos/talks/reading-agent-mcp-calls-through-otel/reading-agent-mcp-calls-through-otel-talk`.
+On 2026-11-16, in repo-management's wave 6, that repo moved down one level into its talk folder and
+was renamed on GitHub (talks-knowledge `REPOS.md` and
+`sister-repos/reading-agent-mcp-calls-through-otel-talk.md`). The other ~/repos paths still match
+the catalog: `conferences/conference-knowledge`, `talks/talks-knowledge`, and this repo's own
+`talks/Value_with_Agents_Observability_in_action`. The repo has no `.claude/rules/`,
+`.claude/skills/`, CI config, cron job or timer. The Makefile's `REMOTE_DIR`
+(`~/observe-claude-code`) is an rsync target outside ~/repos, so the restructure did not touch it.
+The older entry above that names `peopleforrester/reading-agent-mcp-calls-through-otel` stays as
+written, because this file is append-only.
+
+**Test:** `tests/test_repo_paths.py` scans every tracked file except `tests/`, `uv.lock` and this
+append-only file for a path under `~/repos` (also `$HOME/repos` or `/home/michael/repos`).
+Offline, it fails on a path under a retired group (`events/`) or on a known old repo path. Under
+the `integration` marker, it fails when a path is missing under `OCC_REPOS_ROOT` (default: the
+running user's `~/repos`) or lies in no git checkout. With no tree there, it fails and says so.
+
+**Why the checkout check and not plain existence:** the old Toronto path still exists, because it
+is now the talk folder that holds the repo. So the issue's own `[ -e "$p" ]` loop passes on the
+stale path. A path is only right if a git checkout holds it.

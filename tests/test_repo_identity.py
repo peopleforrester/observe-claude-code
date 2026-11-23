@@ -6,7 +6,9 @@ README = REPO_ROOT / "README.md"
 AGENTS = REPO_ROOT / "AGENTS.md"
 CLAUDE = REPO_ROOT / "CLAUDE.md"
 TITLE = "What Does a Good Agent Look Like? Observing Claude Code in Production With OpenTelemetry"
-SIBLING = "reading-agent-mcp-calls-through-otel"
+# The Toronto standby repo, renamed from reading-agent-mcp-calls-through-otel on 2026-11-16 (#4).
+SIBLING = "reading-agent-mcp-calls-through-otel-talk"
+SIBLING_PATH = "~/repos/talks/reading-agent-mcp-calls-through-otel/reading-agent-mcp-calls-through-otel-talk"
 
 
 def _section(text, heading):
@@ -39,7 +41,8 @@ def test_agents_md_says_where_things_live():
     where = _section(AGENTS.read_text(), "## Where things live")
     assert "talks-knowledge" in where and "talks/register.md" in where
     assert "conference-knowledge" in where
-    assert SIBLING in where
+    assert f"peopleforrester/{SIBLING}`" in where
+    assert f"`{SIBLING_PATH}`" in where
     assert "decisions.md" in where
 
 

@@ -21,7 +21,8 @@ Co-presented with Nick Isaacs (Datadog). Michael owns the CNCF side; Nick owns t
   (`~/repos/talks/talks-knowledge`: `talks/register.md` row 8, `abstracts/`). Read it there. To
   change it, file an `agent-task` issue on `peopleforrester/talks-knowledge`.
 - **The Toronto standby version of this talk:** its own repo,
-  `peopleforrester/reading-agent-mcp-calls-through-otel` (`~/repos/talks/reading-agent-mcp-calls-through-otel`),
+  `peopleforrester/reading-agent-mcp-calls-through-otel-talk`
+  (`~/repos/talks/reading-agent-mcp-calls-through-otel/reading-agent-mcp-calls-through-otel-talk`),
   built from this one. This repo is its source; don't put that deck here.
 - **Build state:** `PROJECT_STATE.md`. **Decisions:** `decisions.md`, append-only: add new entries
   at the end, never edit or remove old ones.
